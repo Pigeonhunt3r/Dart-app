@@ -1,5 +1,6 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
+import {throwHit} from './controls.mjs';
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
 const page=await browser.newPage({locale:'en-US',viewport:{width:390,height:844}});
 const errors=[];page.on('pageerror',error=>errors.push(error.message));
@@ -8,7 +9,7 @@ await page.goto(process.env.TEST_BASE_URL||'http://127.0.0.1:3000');
 const fields=()=>page.locator('[name=player]');
 async function choose(mode){await page.locator(`[data-mode=${mode}]`).click();}
 async function names(values){for(let i=0;i<values.length;i++)await fields().nth(i).fill(values[i]);}
-async function winShanghai(){for(const mult of [1,2,3]){await page.locator(`[data-mult="${mult}"]`).click();await page.locator('[data-hit="1"]').click();}await page.locator('.winner').waitFor();}
+async function winShanghai(){for(const mult of [1,2,3])await throwHit(page,1,mult);await page.locator('.winner').waitFor();}
 async function freshShanghai(){await choose('shanghai');await names(['A','B']);await page.locator('.start-button').click();}
 async function assertFresh(){assert.equal(await page.locator('.game-card').count(),12);assert.equal(await page.evaluate(()=>localStorage.getItem('dartclub')),null);await choose('shanghai');assert.deepEqual(await fields().evaluateAll(inputs=>inputs.map(input=>input.value)),['','']);await page.locator('#back').click();}
 
@@ -30,7 +31,7 @@ for(const id of ['rematch','another-mode','end-session'])assert.equal(await page
 await page.locator('#rematch').click();
 assert.equal(await page.locator('.active-player > strong').innerText(),'0');
 assert.deepEqual(await page.locator('.player-name > b').allTextContents(),['A',specialName]);
-assert.equal(await page.locator('[data-mult="1"]').getAttribute('aria-pressed'),'true');
+assert.match(await page.locator('#pending-dart').innerText(),/—/);assert.equal(await page.locator('#add-dart').isDisabled(),true);
 assert.equal(await page.locator('#undo').isDisabled(),true);
 await winShanghai();await page.locator('#another-mode').click();
 assert.match(await page.locator('#continue-roster').innerText(),/A/);assert.ok((await page.locator('#continue-roster').innerText()).includes(specialName));
@@ -59,11 +60,12 @@ assert.deepEqual(await page.locator('.player-name > b').allTextContents(),['A','
 
 // Rematch retains a non-default X01 start/out rule, resetting score, input and undo.
 await choose('x01');await names(['A','B']);await page.locator('#start').selectOption('301');await page.locator('#out').selectOption('straight');await page.locator('.start-button').click();
-await page.locator('[data-mult="3"]').click();for(let i=0;i<3;i++)await page.locator('[data-hit="20"]').click();
+for(let i=0;i<3;i++)await throwHit(page,20,3);
 await page.locator('#next').click();await page.locator('[data-special=miss]').click();await page.locator('#next').click();
-await page.locator('[data-mult="3"]').click();await page.locator('[data-hit="20"]').click();await page.locator('[data-hit="15"]').click();await page.locator('[data-mult="2"]').click();await page.locator('[data-hit="8"]').click();
+await throwHit(page,20,3);await throwHit(page,15,3);await throwHit(page,8,2);
 await page.locator('#rematch').click();assert.equal(await page.locator('.active-player > strong').innerText(),'301');assert.match(await page.locator('.match-info').innerText(),/any field/);
-assert.equal(await page.locator('[data-mult="1"]').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#undo').isDisabled(),true);
+assert.equal(await page.locator('[data-score-digit]').count(),12);await page.locator('#hits-tab').click();
+assert.match(await page.locator('#pending-dart').innerText(),/—/);assert.equal(await page.locator('#add-dart').isDisabled(),true);assert.equal(await page.locator('#undo').isDisabled(),true);
 saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('dartclub')));assert.equal(saved.game.options.doubleOut,false);assert.equal(saved.game.options.start,301);assert.deepEqual(saved.game.players.map(player=>player.name),['A','B']);
 await page.locator('#leave').click();
 

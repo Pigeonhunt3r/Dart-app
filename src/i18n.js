@@ -1,5 +1,29 @@
 // English is the fallback. Danish follows the device’s preferred language.
 export const DANISH=Object.freeze({
+  "App language": "Appens sprog",
+  "Choose your language. System follows your device or Android app language.": "Vælg dit sprog. System følger enhedens sprog eller Androids appsprog.",
+  "Language": "Sprog",
+  "System language": "Systemets sprog",
+  "Apply language": "Anvend sprog",
+  "Your language could not be saved. Please try again.": "Sproget kunne ikke gemmes. Prøv igen.",
+
+  "Tap once for single, twice for double, three times for triple. Then add the dart.": "Tryk én gang for single, to gange for double og tre gange for triple. Tilføj derefter pilen.",
+  "Selected dart": "Valgt pil",
+  "Add dart": "Tilføj pil",
+  "Enter points scored this turn": "Indtast de point, du har ramt i turen",
+  "Round": "Runde",
+  "Game on": "Spillet er i gang",
+  "Points remaining": "Point tilbage",
+  "Lives remaining": "Liv tilbage",
+  "Targets hit": "Mål ramt",
+  "MAKE IT COUNT": "FÅ ALLE POINT MED",
+  "Record your score": "Registrer din score",
+  "Open dartboard calculator": "Åbn dartskive-beregner",
+  "Scoring method": "Registrering af point",
+  "Number pad": "Taltaster",
+  "Dart hits": "Ramte felter",
+  "This turn is already recorded. Choose Next player, or use Dart hits for remaining darts.": "Denne tur er allerede registreret. Vælg Næste spiller, eller brug Ramte felter til de resterende pile.",
+  "You normally have three darts per turn. Use the number pad for a turn total, or tap a target once for single, twice for double or three times for triple, then Add dart. The dartboard button opens the hit calculator. Choose Next player when your turn is finished.": "Du har normalt tre pile pr. tur. Brug taltasterne til turens samlede score, eller tryk på et mål én gang for single, to gange for double eller tre gange for triple og derefter Tilføj pil. Dartskive-knappen åbner beregneren for ramte felter. Vælg Næste spiller, når turen er færdig.",
   "Enter a name for every player (at least one non-space character).": "Skriv et navn til hver spiller (mindst ét tegn, der ikke er mellemrum).",
   "Player names must be 24 characters or fewer.": "Spillernavne må højst være 24 tegn.",
   "Enter at least one non-space character.": "Skriv mindst ét tegn, der ikke er mellemrum.",
@@ -226,7 +250,22 @@ export function resolveLanguage(preferences){
  const preferred=Array.isArray(languages)?languages.find(value=>typeof value==='string'&&value.trim()):null;
  return preferred?.trim().toLowerCase().split(/[-_]/)[0]==='da'?'da':'en';
 }
+export function languagePreference(){
+ try{const value=globalThis.OcheLocale?.preference?.();if(['system','en','da'].includes(value))return value;}catch{}
+ try{const value=globalThis.localStorage?.getItem('oche-language');if(['en','da'].includes(value))return value;}catch{}
+ return 'system';
+}
+export function saveLanguagePreference(value){
+ if(!['system','en','da'].includes(value))return false;
+ try{
+  if(typeof globalThis.OcheLocale?.setPreference==='function')return globalThis.OcheLocale.setPreference(value)===true;
+  if(!globalThis.localStorage)return false;
+  if(value==='system')globalThis.localStorage.removeItem('oche-language');else globalThis.localStorage.setItem('oche-language',value);
+  return true;
+ }catch{return false;}
+}
 function deviceLanguages(){
+ const preference=languagePreference();if(preference!=='system')return [preference];
  try{const native=globalThis.OcheLocale?.language();if(native)return [native];}catch{}
  return globalThis.navigator?.languages?.length?globalThis.navigator.languages:[globalThis.navigator?.language||'en'];
 }

@@ -3,10 +3,14 @@ package dk.pigeonarmy.ocheclub;
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
 import android.app.AlertDialog;
+import android.app.LocaleManager;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.LocaleList;
 import android.view.View;
 import android.view.WindowInsets;
 import android.webkit.WebResourceRequest;
@@ -22,14 +26,24 @@ import java.io.ByteArrayInputStream;
 public final class MainActivity extends ComponentActivity {
     private WebView webView;
     private AlertDialog exitDialog;
+    private String deviceLanguage;
+    private SharedPreferences languageSettings;
+    private static final Object LANGUAGE_LOCK = new Object();
+    private static String committedLanguagePreference;
     private static GameStore gameStore;
     private static final String HOST = "appassets.androidplatform.net";
     private static final String START = "https://" + HOST + "/assets/www/index.html";
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        // Read Android's locale service before WebView can alter a resource context.
+        deviceLanguage = effectiveAndroidLanguage();
+        languageSettings = getApplicationContext().getSharedPreferences("oche-settings", MODE_PRIVATE);
+        synchronized (LANGUAGE_LOCK) {
+            if (committedLanguagePreference == null) committedLanguagePreference = languageSettings.getString("language", "system");
+        }
         webView = new WebView(this);
-        webView.setBackgroundColor(Color.rgb(18, 23, 19));
+        webView.setBackgroundColor(Color.rgb(244, 246, 250));
         setContentView(webView);
         // Keep the scoreboard and controls out of system bars, cutouts and the IME.
         if (Build.VERSION.SDK_INT >= 30) {
@@ -110,8 +124,31 @@ public final class MainActivity extends ComponentActivity {
 
     public final class DeviceLocale {
         @JavascriptInterface public String language() {
-            return getResources().getConfiguration().getLocales().get(0).toLanguageTag();
+            String selected = preference();
+            return "system".equals(selected) ? deviceLanguage : selected;
         }
+        @JavascriptInterface public String preference() {
+            synchronized (LANGUAGE_LOCK) { return committedLanguagePreference; }
+        }
+        @JavascriptInterface public boolean setPreference(String value) {
+            if (!"system".equals(value) && !"en".equals(value) && !"da".equals(value)) return false;
+            synchronized (LANGUAGE_LOCK) {
+                if (!languageSettings.edit().putString("language", value).commit()) return false;
+                committedLanguagePreference = value;
+                return true;
+            }
+        }
+    }
+
+    private String effectiveAndroidLanguage() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            LocaleManager manager = getSystemService(LocaleManager.class);
+            LocaleList selected = manager.getApplicationLocales();
+            if (selected.isEmpty()) selected = manager.getSystemLocales();
+            if (!selected.isEmpty()) return selected.get(0).toLanguageTag();
+        }
+        LocaleList selected = Resources.getSystem().getConfiguration().getLocales();
+        return selected.isEmpty() ? "en" : selected.get(0).toLanguageTag();
     }
 
     private void requestBack() {
@@ -122,10 +159,13 @@ public final class MainActivity extends ComponentActivity {
 
     private void confirmExit() {
         if (exitDialog != null && exitDialog.isShowing()) return;
+        Configuration localized = new Configuration(getResources().getConfiguration());
+        localized.setLocale(java.util.Locale.forLanguageTag(new DeviceLocale().language()));
+        Resources strings = createConfigurationContext(localized).getResources();
         exitDialog = new AlertDialog.Builder(this)
-            .setTitle(R.string.close_title).setMessage(R.string.close_message)
-            .setPositiveButton(R.string.close_yes, (dialog, which) -> finish())
-            .setNegativeButton(R.string.close_no, null).show();
+            .setTitle(strings.getString(R.string.close_title)).setMessage(strings.getString(R.string.close_message))
+            .setPositiveButton(strings.getString(R.string.close_yes), (dialog, which) -> finish())
+            .setNegativeButton(strings.getString(R.string.close_no), null).show();
     }
 
     @Override protected void onPause() { webView.onPause(); super.onPause(); }

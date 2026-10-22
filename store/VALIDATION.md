@@ -2,7 +2,13 @@
 
 This records development checks, not commercial store readiness.
 
-## Local Preview 1.0.5 checks
+## Preview 1.0.6 redesign checks
+
+The redesigned interface adds a visible standard keypad to X01/Count Up, a real dartboard calculator launcher and repeated-tap exact-field selection. New browser/native checks cover a pending single/double/triple selection before Add dart, Bull/Bullseye cycling, scoring after confirmation, failed-save retries and an empty selection after rematch. The existing full-game, rulebook, checkout, storage, language and session suites remain required. Native versionCode 7 checks exercise the regular keypad and repeated-tap entry in the real Android WebView.
+
+Local checks passed: 43 unit tests and all four browser suites; debug APK, unsigned release APK/AAB and lint (0 errors, 2 warnings). Browser checks cover inline keypad clearing/backspace, invalid totals, required final-double confirmation, repeated-tap exact darts, failed-save retries, system/manual language choices and preserved games. Layout checks found no horizontal overflow at 320, 390, 412, 915 and 1440px. The tagged Android 15/16 checks are pending publication. The confirmed 1.0.5 checks below are historical evidence.
+
+## Confirmed local baseline: Preview 1.0.5
 
 - Frozen-lockfile npm installation, JavaScript syntax and **42 unit tests: 42 passed, 0 failed, 0 skipped**. Covers all game modes, checkout routes, totals, Bust, storage migration/failure/deletion and language selection.
 - Danish browser regression: all 12 games and rulebooks, checkout victory, calculator, numeric totals, undo, privacy deletion, mobile layout and offline play.
@@ -22,7 +28,7 @@ The preceding Preview 1.0.1 diagnosis failed specifically at **process-death per
 
 ## Preview 1.0.5 native session checks
 
-The native smoke enters required names, checks post-game rematch, carrying players into another mode and ending the session. It also changes the Android app language to Danish, checks score 401 and translated controls, opens the real Danish exit dialog, then switches to English and rechecks the score. Both API 35 and 36 must pass on the exact tagged APK before release. These new checks are pending at this source commit; consult the associated Actions result for their completed outcome.
+The native smoke enters required names, checks post-game rematch, carrying players into another mode and ending the session. It also changes the Android app language to Danish, checks score 401 and translated controls, opens the real Danish exit dialog, then switches to English and rechecks the score. Both API 35 and 36 must pass on the exact tagged APK before release. Both passed in [tag run 39797831263](https://github.com/Pigeonhunt3r/Dart-app/actions/runs/39797831263) and [main run 39797828746](https://github.com/Pigeonhunt3r/Dart-app/actions/runs/39797828746). All four published 1.0.5 assets were downloaded and matched the committed snapshot byte-for-byte.
 
 ## Samsung device report
 

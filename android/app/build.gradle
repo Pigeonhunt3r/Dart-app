@@ -7,10 +7,12 @@ android {
         applicationId 'dk.pigeonarmy.ocheclub'
         minSdk 26
         targetSdk 36
-        versionCode 6
-        versionName '1.0.5'
+        versionCode 7
+        versionName '1.0.6'
     }
     buildFeatures { buildConfig true }
+    // Both bundled languages must remain available offline after an in-app change.
+    bundle { language { enableSplit = false } }
     signingConfigs {
         debug {
             def androidUser = System.getenv('ANDROID_USER_HOME')

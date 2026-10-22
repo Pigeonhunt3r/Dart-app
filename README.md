@@ -76,27 +76,28 @@ Browser-testen kræver Chromium på `/usr/bin/chromium` eller `CHROMIUM_PATH`, o
 Android lint er aktiveret uden baseline eller deaktiverede fejl. Toolchain-scriptet skriver kun til `/workspace` og accepterer SDK-licenser ved installation. En Android-emulator kan installeres valgfrit med `python scripts/setup-android.py --emulator`; real-device-test er stadig nødvendig før salg.
 
 
-## Pointberegner og begynderguider
+## Score entry and beginner guides
 
-Tryk på dartskive-knappen i et spil for at åbne en beregner. Vælg felterne på skiven (single/double/triple, bull eller forbi), kontrollér pilene og tryk **Færdig** for at registrere dem. Ændringer forbliver en kladde indtil Færdig. Bull og bullseye har også store knapper til små skærme.
+X01 and Count Up open with a regular **0–9 number pad** on the scoring screen. Enter the points scored in the turn (0–180), use Clear or backspace to correct them, then press **Done**. A total is a full turn and can only be entered before any individual darts have been recorded. A double-out finish asks what the final dart hit; an invalid finish is a Bust.
 
-X01 og Count Up har desuden en **Samlet score**-fane med 0–9, ryd og slet. Den registrerer hele turens sum (0–180) og kan kun bruges ved turens start. Ved en X01-lukning med double-out skal sidste felt bekræftes; en forkert afslutning bliver bust. Cricket og målbaserede spil kræver de konkrete felter, så rene totaler ikke ødelægger reglerne. **Bust** i X01/Elimination annullerer hele turen, inklusive eventuelle nulstillinger af modstandere.
+The **Dart hits** view uses repeated target taps instead of separate Single, Double and Triple buttons. Tap a number once for single, twice for double or three times for triple, then press **Add dart**. The selected dart is a preview until confirmed. A fourth tap returns to single. Bull cycles between 25 and Bullseye (50), and Miss records zero. The next dart starts with a fresh selection, including when it hits the same number. Cricket shows its seven scoring targets; all target-based modes keep exact field information so marks, closures and wins remain correct.
 
-Alle spilkort har en **ⓘ**-knap med mål, regler, eksempler og en forklaring på skivens felter. X01 viser flere mulige lukninger, inklusive bull-ruter, når scoren kommer inden for rækkevidde. Kun kombinationer, der passer til de resterende pile og slutreglen, vises.
+Tap the **dartboard icon** to open the hit calculator. Choose the exact single, double or triple field on the board, or use the large Bull/Miss buttons, review the dart previews, and press **Done**. Closing this calculator discards its unconfirmed draft. It also has a numeric-total tab for X01 and Count Up. **Bust** in X01/Elimination cancels the whole turn, including any opponent resets.
 
+Every game card has an **ⓘ** rulebook with the aim, rules and an example. X01 shows several legal checkout combinations, including bull routes, when the remaining score is low enough. Only combinations that fit the darts left and finish rule are shown. English is the default; Danish follows the device language.
 
 ## GitHub-builds og testdownloads
 
-Kildekode, Gradle-wrapper, lokale skrifter/licenser, tests og vejledninger ligger i dette repository. `downloads/v1.0.5-alpha.1/` indeholder den versionslåste Preview-APK og en web-ZIP, så de kan hentes direkte fra GitHub uden en appbutik.
+Kildekode, Gradle-wrapper, lokale skrifter/licenser, tests og vejledninger ligger i dette repository. `downloads/v1.0.6-alpha.2/` indeholder den versionslåste Preview-APK og en web-ZIP, så de kan hentes direkte fra GitHub uden en appbutik.
 
 GitHub Actions-workflowen bygger og tester ved pushes til `main` og ved pull requests. `v*-alpha.*`-tags udløser desuden en test-prerelease med APK, web-ZIP og checksums, hvis repositoryets Actions og tokenrettigheder tillader det. Et push eller et tag beviser ikke, at workflowen er gennemført; se Actions-resultatet. Ingen Play Store-, App Store- eller hjemmesideudgivelse udføres.
 
-Efter et lokalt Android-build oprettes en ny, versionslåst Preview-download med `npm run package:downloads -- --create-snapshot v1.0.5-alpha.1` (vælg et nyt tag for næste version). Kontroller den med `--verify-snapshot <tag>`. Udgivelsesworkflowen bruger `--publish-snapshot <tag>` til at kopiere de eksakte signerede filer og afviser ændrede certifikater eller forældede kildefiler. Eksisterende snapshots overskrives ikke.
+Efter et lokalt Android-build oprettes en ny, versionslåst Preview-download med `npm run package:downloads -- --create-snapshot v1.0.6-alpha.2` (vælg et nyt tag for næste version). Kontroller den med `--verify-snapshot <tag>`. Udgivelsesworkflowen bruger `--publish-snapshot <tag>` til at kopiere de eksakte signerede filer og afviser ændrede certifikater eller forældede kildefiler. Eksisterende snapshots overskrives ikke.
 
 
 ## Android-installation og lokal lagring
 
-De oprindelige to testdownloads havde samme app-ID og forskellige debug-signaturer. De kan ikke installeres oven på hinanden. Den nye testapp hedder **Oche Club Preview**, har ID `dk.pigeonarmy.ocheclub.preview`, versionCode 6 og versionName `1.0.5-preview`. Den kan installeres ved siden af den gamle app uden at slette dens data. Produktions-ID'et er fortsat `dk.pigeonarmy.ocheclub`.
+De oprindelige to testdownloads havde samme app-ID og forskellige debug-signaturer. De kan ikke installeres oven på hinanden. Den nye testapp hedder **Oche Club Preview**, har ID `dk.pigeonarmy.ocheclub.preview`, versionCode 7 og versionName `1.0.6-preview`. Den kan installeres ved siden af den gamle app uden at slette dens data. Produktions-ID'et er fortsat `dk.pigeonarmy.ocheclub`.
 
 Preview-signerens offentlige certifikatfingeraftryk ligger i `android/preview-signing-cert.sha256`. Den private nøgle ligger uden for Git og skal bevares sikkert af udgiveren. En ny tilfældig nøgle bliver afvist ved oprettelse af offentlige previews; CI må gerne bygge med sin egen midlertidige debug-nøgle, men den build erstatter ikke den versionslåste download.
 
@@ -115,3 +116,9 @@ From 1.0.4, a failed save leaves the score, undo state or deletion unchanged and
 ## Players and the next game
 
 Every fresh game setup starts with blank name fields. Each player must enter 1–24 characters, with at least one non-space character; surrounding whitespace is trimmed. Rematch preserves the same names, mode and settings while resetting scores and undo. After a win or shared win, choose Rematch, Another mode with the same players, or End session. Continuing shows the named group and pre-fills the next setup; names stay editable, and games that require two players explain when another person must be added. The completed result stays saved until the next game starts successfully. End session clears the game, names and undo history, so the next fresh setup is blank.
+
+## Interface refresh (Preview 1.0.6)
+
+The scoring interface uses cool light surfaces, slate text, a blue accent, larger active-player scores and touch-sized controls. A visible numeric keypad, a real dartboard calculator button and repeated-tap field entry replace the previous multiplier selector. Player setup, rematches, continuing with the same group, rulebooks, offline scoring and acknowledged local saves remain available.
+
+From Preview 1.0.6, the EN/DA button opens App language: follow the system, English or Dansk. Android reads its system/per-app locale from LocaleManager before creating WebView. An explicit choice is saved separately from the game and persists after restart; returning to System language restores the Android or browser preference. Language changes preserve the saved game and undo history.
