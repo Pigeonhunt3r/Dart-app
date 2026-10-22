@@ -75,9 +75,13 @@ function closeWebView(){
  if(port){try{android('forward','--remove',`tcp:${port}`);}catch{}port=null;}
 }
 async function click(selector){
- const found=await cdp.evaluate(`(()=>{const element=document.querySelector(${JSON.stringify(selector)});if(!element||element.disabled)return false;element.click();return true;})()`);
- assert.equal(found,true,`Missing or disabled app control: ${selector}`);
+ const hit=await cdp.evaluate(`(()=>{const element=document.querySelector(${JSON.stringify(selector)});if(!element||element.disabled)return null;element.scrollIntoView({block:'center',inline:'center'});const r=element.getBoundingClientRect();if(!r.width||!r.height)return null;return {x:r.left+r.width/2,y:r.top+r.height/2};})()`);
+ assert.ok(hit,`Missing, hidden or disabled app control: ${selector}`);
+ // Use real renderer input: SVG dart fields have no HTMLElement.click() method.
+ await cdp.call('Input.dispatchMouseEvent',{type:'mousePressed',x:hit.x,y:hit.y,button:'left',clickCount:1});
+ await cdp.call('Input.dispatchMouseEvent',{type:'mouseReleased',x:hit.x,y:hit.y,button:'left',clickCount:1});
 }
+
 async function activeScore(score){
  await until(()=>cdp.evaluate(`document.querySelector('.active-player')?.innerText.includes(${JSON.stringify(String(score))})`),`Active score did not become ${score}.`);
 }
