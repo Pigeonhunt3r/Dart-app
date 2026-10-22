@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Oche Club</string>
+    <string name="close_title">Luk Oche Club?</string>
+    <string name="close_message">Dit igangværende spil gemmes automatisk på denne enhed.</string>
+    <string name="close_yes">Luk appen</string>
+    <string name="close_no">Spil videre</string>
+</resources>

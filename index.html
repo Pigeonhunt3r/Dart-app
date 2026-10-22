@@ -1,0 +1,6 @@
+<!doctype html>
+<html lang="da"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./public/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Oche Club"><meta name="theme-color" content="#121713"><meta name="description" content="Oche Club — dansk pointtavle til X01, Cricket, Jorden rundt og mange flere dartspil."><title>Oche Club · Ét kast mere</title><link rel="stylesheet" href="./src/style.css"></head><body><div id="app"></div><script>
+window.ocheSupported=typeof structuredClone==='function' && typeof HTMLDialogElement!=='undefined' && typeof HTMLDialogElement.prototype.showModal==='function' && typeof Array.prototype.at==='function';
+if(!window.ocheSupported){document.getElementById('app').textContent='Opdater Android System WebView, Chrome eller Safari for at bruge Oche Club. Derefter kan du åbne appen igen.';}
+</script><script type="module">if(window.ocheSupported){import('./src/app.js');}
+if('serviceWorker' in navigator && location.hostname!=='appassets.androidplatform.net')navigator.serviceWorker.register('./service-worker.js').catch(function(){console.info('Offline-cache er ikke tilgængelig i denne browser.');});</script></body></html>

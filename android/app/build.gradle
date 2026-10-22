@@ -1,0 +1,62 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'dk.pigeonarmy.ocheclub'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'dk.pigeonarmy.ocheclub'
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName '1.0.0'
+    }
+    buildFeatures { buildConfig true }
+    signingConfigs {
+        debug {
+            def androidUser = System.getenv('ANDROID_USER_HOME')
+            if (androidUser) storeFile file("${androidUser}/debug.keystore")
+        }
+    }
+    // Release keys belong to the publisher. Never fall back to debug signing.
+    def signingFile = rootProject.file('keystore.properties')
+    if (signingFile.exists()) {
+        def signing = new Properties()
+        signingFile.withInputStream { signing.load(it) }
+        signingConfigs {
+            release {
+                storeFile rootProject.file(signing['storeFile'])
+                storePassword signing['storePassword']
+                keyAlias signing['keyAlias']
+                keyPassword signing['keyPassword']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (signingFile.exists()) signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets { main { assets.srcDir layout.buildDirectory.dir('generated/webAssets') } }
+}
+
+def prepareWebAssets = tasks.register('prepareWebAssets', Sync) {
+    from('../../') {
+        include 'index.html'
+        include 'src/**'
+        include 'PRIVACY.md'
+        include 'public/**'
+        include 'manifest.webmanifest'
+    }
+    into layout.buildDirectory.dir('generated/webAssets/www')
+}
+tasks.named('preBuild').configure { dependsOn prepareWebAssets }
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.14.0'
+    implementation 'androidx.activity:activity:1.10.1'
+}

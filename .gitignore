@@ -1,0 +1,22 @@
+node_modules/
+*.log
+.DS_Store
+android/.gradle/
+android/local.properties
+android/keystore.properties
+android/**/build/
+*.jks
+*.keystore
+dist/
+artifacts/
+
+# Local environment and future mobile signing material
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
+*.key
+*.pem

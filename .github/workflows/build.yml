@@ -1,0 +1,115 @@
+name: Build and test Oche Club
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*-alpha.*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
+      - name: Install and test JavaScript
+        run: |
+          npm ci --ignore-scripts
+          npm run check
+          npm test
+      - name: Install browser used by the smoke test
+        run: npx playwright install --with-deps chromium
+      - name: Exercise all games, scoring and offline play
+        shell: bash
+        run: |
+          set -euo pipefail
+          node server.js > /tmp/oche-club-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          node --input-type=module <<'JS'
+          let ready=false;
+          for(let attempt=0;attempt<50;attempt++){
+            try { const r=await fetch('http://127.0.0.1:3000/'); if(r.ok){ready=true;break;} } catch {}
+            await new Promise(resolve=>setTimeout(resolve,200));
+          }
+          if(!ready)throw new Error('App server did not become ready');
+          JS
+          export CHROMIUM_PATH="$(node --input-type=module -e 'import {chromium} from "playwright"; process.stdout.write(chromium.executablePath())')"
+          npm run test:browser
+      - name: Ensure Android build packages are installed
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager_path="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          "$sdkmanager_path" 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Build Android test and unsigned release packages
+        run: ./scripts/android.sh assembleDebug lintDebug assembleRelease bundleRelease
+      - name: Export and package personal test downloads
+        run: |
+          npm run build:web
+          npm run package:downloads
+      - name: Keep test downloads
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: OcheClub-test-downloads
+          path: artifacts/downloads/*
+          if-no-files-found: error
+      - name: Keep lint report and browser screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: OcheClub-check-reports
+          path: |
+            android/app/build/reports/lint-results-debug.*
+            artifacts/*.png
+          if-no-files-found: ignore
+
+  test-release:
+    if: github.ref_type == 'tag' && contains(github.ref_name, '-alpha.')
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: OcheClub-test-downloads
+          path: release-assets
+      - name: Publish a development prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release-assets/* --clobber
+          else
+            gh release create "$TAG" release-assets/* --verify-tag --prerelease \
+              --title "Oche Club $TAG — Android test build" \
+              --notes-file store/TEST_RELEASE.md
+          fi
