@@ -2,7 +2,7 @@
 
 [Download Android-testappen og webversionen](downloads/README.md) · [Automatiske builds](https://github.com/Pigeonhunt3r/Dart-app/actions)
 
-Dansk dart-scoreapp til Android og en installérbar webversion til 1–8 spillere. Ingen konto, database eller eksterne JavaScript-afhængigheder. Aktuelle spil gemmes automatisk i browserens localStorage, inklusive fortryd-historik.
+Dansk dart-scoreapp til Android og en installérbar webversion til 1–8 spillere. Ingen konto, database eller eksterne JavaScript-afhængigheder. Aktuelle spil og fortryd-historik gemmes automatisk lokalt: med bekræftede disk-skrivninger på Android og localStorage i webversionen.
 
 ## Kør lokalt
 
@@ -87,17 +87,21 @@ Alle spilkort har en **ⓘ**-knap med mål, regler, eksempler og en forklaring p
 
 ## GitHub-builds og testdownloads
 
-Kildekode, Gradle-wrapper, lokale skrifter/licenser, tests og vejledninger ligger i dette repository. `downloads/v1.0.1-alpha.2/` indeholder den første lokalt verificerede debug-APK og en web-ZIP, så de kan hentes direkte fra GitHub uden en appbutik.
+Kildekode, Gradle-wrapper, lokale skrifter/licenser, tests og vejledninger ligger i dette repository. `downloads/v1.0.2-alpha.1/` indeholder den første lokalt verificerede debug-APK og en web-ZIP, så de kan hentes direkte fra GitHub uden en appbutik.
 
 GitHub Actions-workflowen bygger og tester ved pushes til `main` og ved pull requests. `v*-alpha.*`-tags udløser desuden en test-prerelease med APK, web-ZIP og checksums, hvis repositoryets Actions og tokenrettigheder tillader det. Et push eller et tag beviser ikke, at workflowen er gennemført; se Actions-resultatet. Ingen Play Store-, App Store- eller hjemmesideudgivelse udføres.
 
-Efter et lokalt Android-build oprettes en ny, versionslåst Preview-download med `npm run package:downloads -- --create-snapshot v1.0.1-alpha.2` (vælg et nyt tag for næste version). Kontroller den med `--verify-snapshot <tag>`. Udgivelsesworkflowen bruger `--publish-snapshot <tag>` til at kopiere de eksakte signerede filer og afviser ændrede certifikater eller forældede kildefiler. Eksisterende snapshots overskrives ikke.
+Efter et lokalt Android-build oprettes en ny, versionslåst Preview-download med `npm run package:downloads -- --create-snapshot v1.0.2-alpha.1` (vælg et nyt tag for næste version). Kontroller den med `--verify-snapshot <tag>`. Udgivelsesworkflowen bruger `--publish-snapshot <tag>` til at kopiere de eksakte signerede filer og afviser ændrede certifikater eller forældede kildefiler. Eksisterende snapshots overskrives ikke.
 
 
-## Rettelse af "Appen er ikke installeret"
+## Android-installation og lokal lagring
 
-De oprindelige to testdownloads havde samme app-ID og forskellige debug-signaturer. De kan ikke installeres oven på hinanden. Den nye testapp hedder **Oche Club Preview**, har ID `dk.pigeonarmy.ocheclub.preview`, versionCode 2 og versionName `1.0.1-preview`. Den kan installeres ved siden af den gamle app uden at slette dens data. Produktions-ID'et er fortsat `dk.pigeonarmy.ocheclub`.
+De oprindelige to testdownloads havde samme app-ID og forskellige debug-signaturer. De kan ikke installeres oven på hinanden. Den nye testapp hedder **Oche Club Preview**, har ID `dk.pigeonarmy.ocheclub.preview`, versionCode 3 og versionName `1.0.2-preview`. Den kan installeres ved siden af den gamle app uden at slette dens data. Produktions-ID'et er fortsat `dk.pigeonarmy.ocheclub`.
 
 Preview-signerens offentlige certifikatfingeraftryk ligger i `android/preview-signing-cert.sha256`. Den private nøgle ligger uden for Git og skal bevares sikkert af udgiveren. En ny tilfældig nøgle bliver afvist ved oprettelse af offentlige previews; CI må gerne bygge med sin egen midlertidige debug-nøgle, men den build erstatter ikke den versionslåste download.
 
-GitHub Actions bruger en KVM-accelereret Android-emulator til `npm run test:android`: installation ved siden af den gamle app, geninstallation med samme certifikat, native opstart, 12 spilkort i den faktiske Android WebView, beregner/Færdig, fortryd, taltaster og lagring efter stop/genstart af processen. Ved tags testes den eksakte APK, der derefter udgives.
+GitHub Actions bruger KVM-accelererede Android 15- og 16-emulatorer til `npm run test:android`: installation ved siden af den gamle app, geninstallation med samme certifikat, native opstart, 12 spilkort i den faktiske Android WebView, beregner/Færdig, fortryd, taltaster og lagring efter stop/genstart af processen. Ved tags testes den eksakte APK, der derefter udgives.
+
+Android 1.0.2 gemmer spillet gennem en snæver lokal bro til appens private lager. Hver vellykket ændring er skrevet til disk før næste visning. Gamle Preview-spil fra WebView-lageret migreres ved opstart; sletning gemmes også, så et slettet spil ikke kommer tilbage. Webversionen bruger fortsat localStorage.
+
+Samsung-telefonens generelle installationsfejl er endnu ikke diagnosticeret: brugeren havde ikke appen installeret i forvejen, så signaturkonflikten forklarer ikke den konkrete fejl. De automatiske checks kan kontrollere APK og Android-runtime, men ikke Samsungs indstillinger for installation fra filer.

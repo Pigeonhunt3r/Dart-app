@@ -3,6 +3,7 @@ package dk.pigeonarmy.ocheclub;
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
 import android.app.AlertDialog;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -13,10 +14,11 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.JavascriptInterface;
 import androidx.webkit.WebViewAssetLoader;
 import java.io.ByteArrayInputStream;
 
-/** Offline application shell: packaged assets, no remote origin or JavaScript bridge. */
+/** Offline application shell: packaged assets and a narrowly scoped local game store. */
 public final class MainActivity extends ComponentActivity {
     private WebView webView;
     private AlertDialog exitDialog;
@@ -70,10 +72,29 @@ public final class MainActivity extends ComponentActivity {
             }
         });
         webView.setWebChromeClient(new android.webkit.WebChromeClient());
+        // Only packaged pages can load. These two methods acknowledge disk writes
+        // before the scoreboard advances, including when Android kills the process.
+        webView.addJavascriptInterface(new GameStore(
+            getSharedPreferences("oche-game", MODE_PRIVATE)), "OcheGameStore");
         webView.loadUrl(START);
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() { requestBack(); }
         });
+    }
+
+    public static final class GameStore {
+        private final SharedPreferences preferences;
+        GameStore(SharedPreferences preferences) { this.preferences = preferences; }
+
+        @JavascriptInterface public String load() {
+            return preferences.getString("game", null);
+        }
+
+        @JavascriptInterface public boolean save(String value) {
+            if (value == null || value.length() > 4 * 1024 * 1024) return false;
+            // An empty value records deletion, so old WebView data cannot reappear.
+            return preferences.edit().putString("game", value).commit();
+        }
     }
 
     private void requestBack() {

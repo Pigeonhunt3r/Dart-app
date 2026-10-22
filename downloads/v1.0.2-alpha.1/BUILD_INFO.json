@@ -1,0 +1,42 @@
+{
+  "formatVersion": 1,
+  "releaseTag": "v1.0.2-alpha.1",
+  "apkFile": "OcheClub-1.0.2-preview.apk",
+  "android": {
+    "applicationId": "dk.pigeonarmy.ocheclub.preview",
+    "versionCode": 3,
+    "versionName": "1.0.2-preview",
+    "signingCertificateSha256": "04566fe5a2fb1f98c68107b849fe51d035888d81140c48d62c4dd614ded5f6bb"
+  },
+  "sourceInputs": {
+    "index.html": "78233d066547a5cc9a57c572f50097d072c2888203cf73977e37869b9e11e1cc",
+    "manifest.webmanifest": "e8bc03c459e6660c1f6c6acccc1cbffed6410e43f369592853bd9b4ad8687168",
+    "PRIVACY.md": "80543dfa53d3a2e57de0bee9e3d12b0888b21df28f314c33c8b65a7539ac9b98",
+    "src/app.js": "d834f26d2712436175d11e775652142050b459a9d006e831e7a9a8ff9f4ecea4",
+    "src/engine.js": "167582f09151d3b66afa8e5389c91df5002c26f89696d9bbc5f35e7ad0754855",
+    "src/fonts/LICENSE-barlow.txt": "046ee27d8bddc6b6ee08eee53c96dbf3ec1f6df561644e018507dd8ffcb11d31",
+    "src/fonts/LICENSE-dm-sans.txt": "6fbd040a29c2037a765dfb9f2561e9965b5c95c6dcb5dce516089d63d5f17af7",
+    "src/fonts/barlow-condensed-latin-600-normal.woff2": "215a93c696f442034a46fbb382958f753fda60e30490683aeea6b235fcbb2b66",
+    "src/fonts/barlow-condensed-latin-800-normal.woff2": "2515494e8cc2ca07c86ea78766cfa104b796aa6ed5d66821c01d51dbb0b52bce",
+    "src/fonts/dm-sans-latin-400-normal.woff2": "4ab51eb2cd7305d177187908d6397474d4520663f6c6e572feb0a64f4fa80006",
+    "src/fonts/dm-sans-latin-700-normal.woff2": "35c5efa0e5daa52ee5c6500f5be354bf751fb65c4e49e1d6806c6eb5883e8fe9",
+    "src/storage.js": "30e5564be22bc3b5b4d3e8119291bddb4c65b367a5f3479602db544dbcf0f533",
+    "src/style.css": "8d8340a95d7c6257a91707aa8d3d9cd96062b2f8f4907d27200b565ba58474d8",
+    "public/icon-192.png": "22ff68a6a69637046b97e1c216a47ad200a92549cee80506b675eddf164633f0",
+    "public/icon-512.png": "6934e0fe22399821801690af9225f0218c607800c7dec00c89490a72e5e75627",
+    "public/icon.svg": "17468652bd6a0f21911b61c900006090bb2a5738c30af8ce3ef8469cc4fe480e",
+    "service-worker.js": "d3c1f3d2043453decf9270b04a7e27f0e51bcf557c060aa4b8925a8d01d29438",
+    "android/app/build.gradle": "9da0b03f8db91a8fc4e18f7bd21f5455b7854edcb63cfae3e4b5a5a69484200a",
+    "android/build.gradle": "6844d442e0ae87ec0b784c8afe5598878784c4fa41aced1e9389a9b3bfb25666",
+    "android/settings.gradle": "9500c8ec6bb32372c61f8841a8eded991f94d74f24fc063cf5cb9736252e5356",
+    "android/gradle.properties": "61de5a349bdfb89144114c0ff0970bd62b0cfe696a8648b052b6d1dbdd6895f6",
+    "android/gradle/wrapper/gradle-wrapper.jar": "81a82aaea5abcc8ff68b3dfcb58b3c3c429378efd98e7433460610fecd7ae45f",
+    "android/gradle/wrapper/gradle-wrapper.properties": "c040b6ef2fb893ff5beea5a281614f2848f1c3996a7886f650b713f8240656a2",
+    "android/app/src/main/AndroidManifest.xml": "f47d360a54accd8a21d0885a63ac693d216adae2c346b32715843ba63df4cc81",
+    "android/app/src/main/java/dk/pigeonarmy/ocheclub/MainActivity.java": "73596e21e71f924aa8b4d56a36eaf06a78d9a4886df0d7350b93c4ff1d19c10a",
+    "android/app/src/main/res/drawable/ic_launcher.xml": "bae3554fb778ccfa672b32da274eed8ec4f7d07ede4d0ebbeb2b8efaa7df8123",
+    "android/app/src/main/res/values/strings.xml": "ec8bc9f9a2c302ddb3d35cf86d91aa860f5dbf5142049a4c06eabf2d5c653915",
+    "android/app/src/main/res/values/styles.xml": "9d61f40a2c0c3f9a065baaac986ccf60ccdbe164216c3a8222ef9fa6b4d93337",
+    "android/app/src/main/res/xml/data_extraction_rules.xml": "32ff18d6e5d4c606a5b5e3662c600113e5691fde23f8275897944be0736f9ac5"
+  }
+}

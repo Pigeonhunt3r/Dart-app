@@ -1,12 +1,12 @@
 {
   "name": "oche-club",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "test": "node --test",
-    "check": "node --check src/app.js && node --check src/engine.js && node --check server.js && node --check service-worker.js && node --check scripts/export-web.mjs && node --check scripts/package-downloads.mjs && node --check scripts/android-smoke.mjs",
+    "check": "node --check src/app.js && node --check src/storage.js && node --check src/engine.js && node --check server.js && node --check service-worker.js && node --check scripts/export-web.mjs && node --check scripts/package-downloads.mjs && node --check scripts/android-smoke.mjs",
     "build:web": "node scripts/export-web.mjs",
     "android:debug": "bash scripts/android.sh assembleDebug",
     "android:release": "bash scripts/android.sh assembleRelease bundleRelease",
