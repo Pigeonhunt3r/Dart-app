@@ -31,7 +31,7 @@ assert.equal(android('shell','getprop','ro.kernel.qemu').trim(),'1','Device must
 assert.equal(android('shell','getprop','sys.boot_completed').trim(),'1','Emulator must finish booting.');
 await mkdir('artifacts',{recursive:true});
 
-let cdp,port,lastClick;
+let cdp,port,lastClick,stage='install';
 class CDP {
  constructor(socket){this.socket=socket;this.next=1;this.pending=new Map();socket.addEventListener('message',event=>{
   const data=JSON.parse(event.data);const item=this.pending.get(data.id);if(!item)return;
@@ -103,17 +103,19 @@ try{
  if(packageName==='dk.pigeonarmy.ocheclub.preview'&&existsSync(legacy))assert.match(android('shell','pm','path','dk.pigeonarmy.ocheclub'),/package:/);
  // Exercise same-certificate updates too; failures retain adb's actual install reason.
  assert.match(android('install','-r',apk),/Success/);
- android('logcat','-c');launch();await connectWebView();
+ console.log('APK installation and same-certificate reinstall passed.');
+ stage='launch';android('logcat','-c');launch();await connectWebView();
  await until(()=>cdp.evaluate("document.querySelectorAll('.game-card').length===12"),'Android WebView did not render the 12 game cards.');
- await click('[data-mode="x01"]');await click('.start-button');await activeScore(501);
+ stage='dartboard score';await click('[data-mode="x01"]');await click('.start-button');await activeScore(501);
  await click('#calculator');
  await click('[data-board-n="20"][data-board-m="3"]');await click('#calculator-done');await activeScore(441);
  await click('#undo');await activeScore(501);
- await click('#calculator');await click('#total-tab');
+ stage='numeric score';await click('#calculator');await click('#total-tab');
  for(const digit of ['1','0','0'])await click(`[data-digit="${digit}"]`);
  await click('#calculator-done');await activeScore(401);
  // Kill/relaunch the native process, not only the document, and verify persisted state.
- closeWebView();android('shell','am','force-stop',packageName);launch();await connectWebView();await activeScore(401);
+ console.log('Native dartboard, undo and numeric score passed.');
+ stage='process-death persistence';closeWebView();android('shell','am','force-stop',packageName);launch();await connectWebView();await activeScore(401);
  const activities=android('shell','dumpsys','activity','activities');
  assert.ok(activities.split('\n').some(line=>/ResumedActivity/.test(line)&&line.includes(packageName)),'App is not the resumed Android activity.');
  const crashes=android('logcat','-d','-b','crash');
@@ -125,7 +127,7 @@ try{
 }catch(error){
  let web;
  if(cdp){try{web=await cdp.evaluate("({url:location.href,cards:document.querySelectorAll('.game-card').length,player:document.querySelector('.active-player')?.innerText,dialog:document.querySelector('dialog[open]')?.innerText,darts:[...document.querySelectorAll('.dart-slot')].map(e=>e.innerText),body:document.body.innerText.slice(0,1800)})");}catch{}}
- const detail=JSON.stringify({error:error.message,lastClick,web});
+ const detail=JSON.stringify({stage,error:error.message,lastClick,web});
  console.error('::error title=Native Android diagnostic::'+detail.slice(0,5000).replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A'));
  if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,'\n## Native Android diagnostic\n\n    '+detail.replaceAll('\n','\n    ')+'\n');
  try{await writeFile('artifacts/android-failure-logcat.txt',android('logcat','-d','-t','1000'));}catch{}
