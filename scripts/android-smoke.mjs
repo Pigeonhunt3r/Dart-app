@@ -96,6 +96,26 @@ async function recordedScore(score){
  await activeScore(501);
  assert.equal(await cdp.evaluate("document.querySelectorAll('#next').length"),0,'X01 Done must not require a second Next player action.');
 }
+async function prepareNativeBack(){
+ // Renderer readiness does not imply the Android window has focus after locale recreation.
+ await until(()=>{
+  const activities=android('shell','dumpsys','activity','activities');
+  const windows=android('shell','dumpsys','window');
+  return activities.split('\n').some(line=>/ResumedActivity/.test(line)&&line.includes(packageName))
+   &&windows.split('\n').some(line=>line.includes('mCurrentFocus')&&line.includes(packageName));
+ },'App did not regain the native window focus before Back.');
+ // Back first dismisses an IME if one is visible; that must not count as an exit request.
+ const imeVisible=()=>/mInputShown=true|isInputViewShown=true/.test(android('shell','dumpsys','input_method'));
+ if(imeVisible()){
+  android('shell','input','keyevent','4');
+  await until(()=>!imeVisible(),'Keyboard did not close before the native Back test.');
+ }
+ // Wait for the actual accessibility window, rather than only the CDP document.
+ await until(()=>{
+  android('shell','uiautomator','dump','/data/local/tmp/oche-window.xml');
+  return android('shell','cat','/data/local/tmp/oche-window.xml').includes(`package="${packageName}"`);
+ },'App accessibility window was not ready before Back.');
+}
 async function hitDart(n,m=1){
  if(!tapInput){await click(`[data-mult="${m}"]`);await click(`[data-hit="${n}"]`);return;}
  const hasTab=await cdp.evaluate("Boolean(document.querySelector('#hits-tab'))");
@@ -199,6 +219,7 @@ try{
   assert.match(await cdp.evaluate('document.querySelector("#rules").textContent'),/Spilleregler/);
   assert.match(await cdp.evaluate('window.OcheLocale.language()'),/^da/);
   // Check a real Android resource dialog as well as the translated WebView.
+  await prepareNativeBack();
   android('shell','input','keyevent','4');
   await until(()=>{
    android('shell','uiautomator','dump','/data/local/tmp/oche-window.xml');
@@ -306,5 +327,10 @@ try{
  console.error('::error title=Native Android diagnostic::'+detail.slice(0,5000).replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A'));
  if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,'\n## Native Android diagnostic\n\n    '+detail.replaceAll('\n','\n    ')+'\n');
  try{await writeFile(`${reportPrefix}-failure-logcat.txt`,android('logcat','-d','-t','1000'));}catch{}
+ try{
+  android('shell','uiautomator','dump','/data/local/tmp/oche-window.xml');
+  await writeFile(`${reportPrefix}-failure-window.txt`,android('shell','cat','/data/local/tmp/oche-window.xml'));
+ }catch{}
+ try{await writeFile(`${reportPrefix}-failure-focus-ime.txt`,android('shell','dumpsys','window')+'\n'+android('shell','dumpsys','input_method'));}catch{}
  throw error;
 }finally{closeWebView();}

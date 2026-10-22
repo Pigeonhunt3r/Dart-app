@@ -8,7 +8,7 @@ This revision adds explicit Around Double/Triple buttons, larger scoring text an
 
 Local validation passed: **67 unit tests**, all **six browser suites**, JavaScript syntax, web export, Android debug/unsigned release APK/AAB builds, and lint (0 errors, 2 existing warnings). Browser fault tests verify that calculator Done keeps the draft on failed save, retries once, persists the next player, and restores score/player with one Undo. Exact-hit Done, numeric totals, Bust, winning checkouts, Around shortcuts and three-route limits pass. English/Danish layouts fit at 320, 390, 412 and 1440px, including 24-character names; Miss text contrast is 8.02:1. The immutable 1.0.8 snapshot verifies its preserved signing certificate and exact bundled source assets.
 
-The exact tagged APK must pass Android 15 and 16 before release publication. Historical checks below describe earlier versions.
+The exact tagged APK must pass Android 15 and 16 before release publication. Native exit-dialog checks wait for the resumed app window, keyboard dismissal and accessibility readiness before sending Back, and capture window/input evidence on failure. Historical checks below describe earlier versions.
 
 ## Preview 1.0.7 scores, guidance and rule variants
 
