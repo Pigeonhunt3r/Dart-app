@@ -114,7 +114,7 @@ await page.locator('[data-mode=x01]').click();assert.equal(await page.evaluate((
 await page.locator('#about').click();assert.match(await page.locator('dialog').innerText(),/Ingen reklamer/);
 assert.equal(await page.evaluate(()=>window.ocheClubBack()),true);await page.locator('dialog').waitFor({state:'detached'});
 await page.locator('[data-mode=x01]').click();await startGame();await throwHit(page,20);
-await page.locator('#about').click();page.once('dialog',d=>d.accept());await page.locator('#clear-data').click();assert.equal(await page.locator('.game-card').count(),12);
+await page.locator('#about').click();await page.locator('#clear-data').click();await page.locator('#confirm-accept').click();assert.equal(await page.locator('.game-card').count(),12);
 assert.equal(await page.evaluate(()=>localStorage.getItem('dartclub')),null);
 // Dartboard calculator is a draft until Done; numeric totals consume a full visit.
 await page.locator('[data-mode=x01]').click();await startGame();

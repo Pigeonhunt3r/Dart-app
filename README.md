@@ -88,16 +88,16 @@ Every game card has an **ⓘ** rulebook with the aim, rules and an example. X01 
 
 ## GitHub-builds og testdownloads
 
-Kildekode, Gradle-wrapper, lokale skrifter/licenser, tests og vejledninger ligger i dette repository. `downloads/v1.0.8-alpha.1/` indeholder den versionslåste Preview-APK og en web-ZIP, så de kan hentes direkte fra GitHub uden en appbutik.
+Kildekode, Gradle-wrapper, lokale skrifter/licenser, tests og vejledninger ligger i dette repository. `downloads/v1.0.9-alpha.1/` indeholder den versionslåste Preview-APK og en web-ZIP, så de kan hentes direkte fra GitHub uden en appbutik.
 
 GitHub Actions-workflowen bygger og tester ved pushes til `main` og ved pull requests. `v*-alpha.*`-tags udløser desuden en test-prerelease med APK, web-ZIP og checksums, hvis repositoryets Actions og tokenrettigheder tillader det. Et push eller et tag beviser ikke, at workflowen er gennemført; se Actions-resultatet. Ingen Play Store-, App Store- eller hjemmesideudgivelse udføres.
 
-Efter et lokalt Android-build oprettes en ny, versionslåst Preview-download med `npm run package:downloads -- --create-snapshot v1.0.8-alpha.1` (vælg et nyt tag for næste version). Kontroller den med `--verify-snapshot <tag>`. Udgivelsesworkflowen bruger `--publish-snapshot <tag>` til at kopiere de eksakte signerede filer og afviser ændrede certifikater eller forældede kildefiler. Eksisterende snapshots overskrives ikke.
+Efter et lokalt Android-build oprettes en ny, versionslåst Preview-download med `npm run package:downloads -- --create-snapshot v1.0.9-alpha.1` (vælg et nyt tag for næste version). Kontroller den med `--verify-snapshot <tag>`. Udgivelsesworkflowen bruger `--publish-snapshot <tag>` til at kopiere de eksakte signerede filer og afviser ændrede certifikater eller forældede kildefiler. Eksisterende snapshots overskrives ikke.
 
 
 ## Android-installation og lokal lagring
 
-De oprindelige to testdownloads havde samme app-ID og forskellige debug-signaturer. De kan ikke installeres oven på hinanden. Den nye testapp hedder **Oche Club Preview**, har ID `dk.pigeonarmy.ocheclub.preview`, versionCode 9 og versionName `1.0.8-preview`. Den kan installeres ved siden af den gamle app uden at slette dens data. Produktions-ID'et er fortsat `dk.pigeonarmy.ocheclub`.
+De oprindelige to testdownloads havde samme app-ID og forskellige debug-signaturer. De kan ikke installeres oven på hinanden. Den nye testapp hedder **Oche Club Preview**, har ID `dk.pigeonarmy.ocheclub.preview`, versionCode 10 og versionName `1.0.9-preview`. Den kan installeres ved siden af den gamle app uden at slette dens data. Produktions-ID'et er fortsat `dk.pigeonarmy.ocheclub`.
 
 Preview-signerens offentlige certifikatfingeraftryk ligger i `android/preview-signing-cert.sha256`. Den private nøgle ligger uden for Git og skal bevares sikkert af udgiveren. En ny tilfældig nøgle bliver afvist ved oprettelse af offentlige previews; CI må gerne bygge med sin egen midlertidige debug-nøgle, men den build erstatter ikke den versionslåste download.
 
@@ -141,3 +141,10 @@ Around the World has explicit **Double** and **Triple** hit buttons. On numbered
 Player cards, target boxes, hit buttons, number keys and guidance use larger text, and **Miss** has a darker slate background. X01 **Done** now saves the score and advances to the next player in one action, whether using the regular keypad, dartboard calculator or exact-hit input. Partial calculator visits end on Done; a winning checkout stays on the results screen. Undo restores both the score and player, while failed saves keep the entered score or calculator draft for retry. Bust also completes the X01 turn and identifies whose turn was cancelled.
 
 X01 checkout help shows **up to three** distinct legal routes. Fewer appear only when fewer are possible with the remaining darts and finish rule.
+
+
+## Themed confirmations (Preview 1.0.9)
+
+End game and Delete saved data use app-styled dialogs instead of browser confirmations. Each dialog clearly names its action and offers Keep playing or Keep data as the initially focused button. Cancel, Escape and Android Back dismiss only the top dialog; cancelling data deletion returns to About. A failed save keeps the confirmation open with an inline error and a retry button, preserving the current scores and player names.
+
+Android Back also uses the same themed dialog when closing the app. Close app finishes only this Android Activity through a narrow local bridge, keeping the saved game for the next launch. The native resource dialog remains a fallback if the packaged app page is unavailable. Confirmations follow the app's English/Danish language setting and work offline.

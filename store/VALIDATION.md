@@ -2,6 +2,14 @@
 
 This records development checks, not commercial store readiness.
 
+## Preview 1.0.9 themed confirmations
+
+End game, data deletion and normal Android app closing now use app-styled dialogs. Browser checks cover cancellation, Escape, focus containment/restoration, nested Back handling, failed writes with retry, English/Danish text, and absence of browser JavaScript prompts. Native checks exercise real Android Back, cancelling exit/end-game, confirming Activity close and restoring the saved match on relaunch.
+
+Local validation passed: **67 unit tests**, all **seven browser suites**, JavaScript syntax, web export, Android debug/unsigned release APK/AAB builds, and lint (0 errors, 2 existing warnings). Confirmation layouts fit 320, 390 and 412px, with 48px buttons, keyboard focus containment, reduced-motion support and English/Danish labels. The immutable 1.0.9 snapshot verifies its preserved signing certificate and exact bundled source assets.
+
+The exact tagged APK must pass Android 15 and 16 installation, scoring, themed-dialog, close/relaunch and persistence checks before release publication. Historical results below describe earlier revisions.
+
 ## Preview 1.0.8 turn entry and readability
 
 This revision adds explicit Around Double/Triple buttons, larger scoring text and a darker Miss button. X01 Done commits the score and next player in one saved action; partial calculator visits, exact hits, numeric totals, Bust, undo and failed-save retries share the new flow. Checkout help is capped at three distinct legal routes.

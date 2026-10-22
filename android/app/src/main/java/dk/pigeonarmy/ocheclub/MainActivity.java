@@ -93,6 +93,7 @@ public final class MainActivity extends ComponentActivity {
             getApplicationContext().getSharedPreferences("oche-game", MODE_PRIVATE));
         webView.addJavascriptInterface(gameStore, "OcheGameStore");
         webView.addJavascriptInterface(new DeviceLocale(), "OcheLocale");
+        webView.addJavascriptInterface(new AppActions(), "OcheApp");
         webView.loadUrl(START);
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() { requestBack(); }
@@ -119,6 +120,15 @@ public final class MainActivity extends ComponentActivity {
             // Expose only acknowledged state, including across Activity recreation.
             committedState = value;
             return true;
+        }
+    }
+
+    /** Packaged pages may close only this Activity, after their own confirmation. */
+    public final class AppActions {
+        @JavascriptInterface public void close() {
+            runOnUiThread(() -> {
+                if (!isFinishing()) finish();
+            });
         }
     }
 

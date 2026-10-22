@@ -24,12 +24,12 @@ assert.equal(await page.locator('.active-player > strong').innerText(),'501');as
 assert.match(await page.locator('#pending-dart').innerText(),/20/);
 await fail(false);await page.locator('#add-dart').click();assert.equal(await page.locator('.active-player > strong').innerText(),'481');
 await fail(true);await page.locator('#undo').click();assert.equal(await page.locator('.active-player > strong').innerText(),'481');
-await page.locator('#about').click();page.once('dialog',dialog=>dialog.accept());await page.locator('#clear-data').click();
-assert.match(await page.locator('#privacy-error').innerText(),/could not be saved/);assert.equal(await page.locator('dialog[open]').count(),1);
+await page.locator('#about').click();await page.locator('#clear-data').click();await page.locator('#confirm-accept').click();
+assert.match(await page.locator('.confirmation-error').innerText(),/could not be saved/);assert.equal(await page.locator('dialog[open]').count(),2);
 assert.equal(await page.evaluate(()=>JSON.parse(sessionStorage.getItem('native-game')).game.players[0].score),481);
 await page.reload();assert.equal(await page.locator('.active-player > strong').innerText(),'481');
 await fail(false);await page.locator('#undo').click();assert.equal(await page.locator('.active-player > strong').innerText(),'501');
-await page.locator('#about').click();page.once('dialog',dialog=>dialog.accept());await page.locator('#clear-data').click();
+await page.locator('#about').click();await page.locator('#clear-data').click();await page.locator('#confirm-accept').click();
 assert.equal(await page.locator('.game-card').count(),12);await page.reload();assert.equal(await page.locator('.game-card').count(),12);
 await page.locator('[data-mode=x01]').click();await startGame();
 // Failed inline totals keep both the saved score and entered digits for a direct retry.
@@ -46,7 +46,7 @@ assert.equal(stored.game.players[0].score,501);assert.equal(stored.game.players[
 await page.locator('#undo').click();stored=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('native-game')));
 assert.equal(stored.game.round,60);assert.equal(stored.game.darts.length,1);
 // Failed session ending must keep the completed game and its reusable roster.
-page.once('dialog',dialog=>dialog.accept());await page.locator('#leave').click();
+await page.locator('#leave').click();await page.locator('#confirm-accept').click();
 await page.locator('[data-mode=shanghai]').click();await startGame();
 for(const mult of [1,2,3])await throwHit(page,1,mult);
 await page.locator('#another-mode').click();await fail(true);await page.locator('#end-roster').click();

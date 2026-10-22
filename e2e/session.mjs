@@ -4,7 +4,6 @@ import {throwHit,finishVisit} from './controls.mjs';
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
 const page=await browser.newPage({locale:'en-US',viewport:{width:390,height:844}});
 const errors=[];page.on('pageerror',error=>errors.push(error.message));
-page.on('dialog',dialog=>dialog.accept());
 await page.goto(process.env.TEST_BASE_URL||'http://127.0.0.1:3000');
 const fields=()=>page.locator('[name=player]');
 async function choose(mode){await page.locator(`[data-mode=${mode}]`).click();}
@@ -45,7 +44,7 @@ assert.deepEqual(await fields().evaluateAll(inputs=>inputs.map(input=>input.valu
 await page.locator('.start-button').click();assert.deepEqual(await page.locator('.player-name > b').allTextContents(),['A',specialName]);
 let saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('dartclub')));
 assert.equal(saved.game.mode,'cricket');assert.deepEqual(saved.history,[]);assert.equal(saved.game.winner,null);assert.ok(saved.game.players.every(player=>player.score===0));
-await page.locator('#leave').click();await assertFresh();
+await page.locator('#leave').click();await page.locator('#confirm-accept').click();await assertFresh();
 
 // Ending a completed game clears the roster and saved result, including on reload.
 await freshShanghai();await winShanghai();await page.locator('#end-session').click();await assertFresh();await page.reload();await assertFresh();
@@ -56,7 +55,7 @@ await winShanghai();await page.locator('#another-mode').click();await choose('ki
 assert.deepEqual(await fields().evaluateAll(inputs=>inputs.map(input=>input.value)),['A']);
 await page.locator('.start-button').click();assert.equal(await page.locator('.active-player').count(),0);assert.match(await page.locator('#form-error').innerText(),/at least two/i);
 await page.locator('#add-player').click();assert.equal(await fields().nth(1).inputValue(),'');await fields().nth(1).fill('B');await page.locator('.start-button').click();
-assert.deepEqual(await page.locator('.player-name > b').allTextContents(),['A','B']);await page.locator('#leave').click();
+assert.deepEqual(await page.locator('.player-name > b').allTextContents(),['A','B']);await page.locator('#leave').click();await page.locator('#confirm-accept').click();
 
 // Rematch retains a non-default X01 start/out rule, resetting score, input and undo.
 await choose('x01');await names(['A','B']);await page.locator('#start').selectOption('301');await page.locator('#out').selectOption('straight');await page.locator('.start-button').click();
@@ -67,7 +66,7 @@ await page.locator('#rematch').click();assert.equal(await page.locator('.active-
 assert.equal(await page.locator('[data-score-digit]').count(),12);await page.locator('#hits-tab').click();
 assert.match(await page.locator('#pending-dart').innerText(),/—/);assert.equal(await page.locator('#add-dart').isDisabled(),true);assert.equal(await page.locator('#undo').isDisabled(),true);
 saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('dartclub')));assert.equal(saved.game.options.doubleOut,false);assert.equal(saved.game.options.start,301);assert.deepEqual(saved.game.players.map(player=>player.name),['A','B']);
-await page.locator('#leave').click();
+await page.locator('#leave').click();await page.locator('#confirm-accept').click();
 
 // Ending from the next-mode picker also forgets the reused roster.
 await freshShanghai();await winShanghai();await page.locator('#another-mode').click();await page.locator('#end-roster').click();await assertFresh();

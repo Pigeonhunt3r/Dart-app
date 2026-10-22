@@ -46,7 +46,7 @@ await page.reload();assert.equal(await page.locator('.active-player > strong').i
 assert.match(await page.locator('.active-player').innerText(),/Spilleregler <Anna>/);
 await page.locator('#undo').click();assert.equal(await page.locator('.active-player > strong').innerText(),'501');
 await page.locator('#about').click();assert.match(await page.locator('dialog').innerText(),/No ads, accounts/);
-page.once('dialog',dialog=>dialog.accept());await page.locator('#clear-data').click();
+await page.locator('#clear-data').click();await page.locator('#confirm-accept').click();
 await page.locator('[data-mode=x01]').click();await page.locator('#start').selectOption('301');await startGame();
 for(let i=0;i<3;i++)await throwHit(page,20,3);
 await finishVisit(page);await page.locator('[data-special=miss]').click();await finishVisit(page);

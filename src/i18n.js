@@ -1,5 +1,15 @@
 // English is the fallback. Danish follows the device’s preferred language.
 export const DANISH=Object.freeze({
+  "Keep data": "Behold data",
+  "Delete data": "Slet data",
+  "This removes the saved game, player names and undo history from this device.": "Dette sletter det gemte spil, spillernavne og fortryd-historik fra denne enhed.",
+  "Delete saved data?": "Slet gemte data?",
+  "Close app": "Luk appen",
+  "Your current game saves automatically on this device.": "Dit igangværende spil gemmes automatisk på denne enhed.",
+  "Close Oche Club?": "Luk Oche Club?",
+  "Keep playing": "Spil videre",
+  "This ends the current game and clears its saved scores and player names.": "Dette afslutter spillet og sletter dets gemte scorer og spillernavne.",
+  "End this game?": "Afslut dette spil?",
   "Press Done to finish this turn, or use Dart hits for remaining darts.": "Tryk Færdig for at afslutte turen, eller brug Piletræffere til de resterende pile.",
   "{player}: Bust. The turn was cancelled.": "{player}: Bust. Turen blev annulleret.",
   "{player} scored {points}. {remaining} remaining.": "{player} scorede {points}. {remaining} tilbage.",

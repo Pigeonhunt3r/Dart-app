@@ -38,9 +38,32 @@ function continueBanner(){
 }
 function returnToResult(){continuingPlayers=null;gameView();window.scrollTo(0,0);}
 function chooseAnotherMode(){continuingPlayers=game.players.map(player=>player.name);filter=t('All');landing();window.scrollTo(0,0);}
-function endSession(){
- if(!commitState(null,[])){if(screen==='home')landing();else render();return;}
- resetEntry();filter=t('All');showRules=false;landing();window.scrollTo(0,0);
+function endSession(redrawOnFailure=true){
+ if(!commitState(null,[])){if(redrawOnFailure){if(screen==='home')landing();else render();}return false;}
+ resetEntry();filter=t('All');showRules=false;landing();window.scrollTo(0,0);return true;
+}
+/** App-styled confirmation, with cancellation as the safe default action. */
+function confirmAction({title,description,accept,cancel,destructive=false,onConfirm}){
+ if(document.querySelector('.confirmation-dialog[open]'))return;
+ const opener=document.activeElement,dialog=document.createElement('dialog');
+ dialog.className='confirmation-dialog';dialog.setAttribute('aria-labelledby','confirm-title');dialog.setAttribute('aria-describedby','confirm-description');
+ dialog.innerHTML=`<div class="confirm-symbol" aria-hidden="true">${boardIcon()}</div><p class="eyebrow">OCHE CLUB</p><h2 id="confirm-title">${esc(title)}</h2><p id="confirm-description">${esc(description)}</p><p class="confirmation-error" role="alert"></p><div class="confirmation-actions"><button class="secondary" id="confirm-cancel" autofocus>${esc(cancel)}</button><button class="primary ${destructive?'confirm-destructive':''}" id="confirm-accept">${esc(accept)}</button></div>`;
+ dialog.onclose=()=>{dialog.remove();if(opener?.isConnected)opener.focus({preventScroll:true});};
+ dialog.querySelector('#confirm-cancel').onclick=()=>dialog.close();
+ dialog.querySelector('#confirm-accept').onclick=()=>{
+  const button=dialog.querySelector('#confirm-accept');button.disabled=true;
+  try{
+   if(onConfirm()===false){dialog.querySelector('.confirmation-error').textContent=storageWarning||t('Your change could not be saved. Please try again.');button.disabled=false;return;}
+   if(dialog.isConnected)dialog.close();else dialog.remove();
+  }catch{dialog.querySelector('.confirmation-error').textContent=t('Your change could not be saved. Please try again.');button.disabled=false;}
+ };
+ app.append(dialog);dialog.showModal();dialog.querySelector('#confirm-cancel').focus();
+}
+function confirmEndGame(){
+ confirmAction({title:t('End this game?'),description:t('This ends the current game and clears its saved scores and player names.'),accept:t('End game'),cancel:t('Keep playing'),destructive:true,onConfirm:()=>endSession(false)});
+}
+function confirmCloseApp(){
+ confirmAction({title:t('Close Oche Club?'),description:t('Your current game saves automatically on this device.'),accept:t('Close app'),cancel:t('Keep playing'),onConfirm:()=>{window.OcheApp.close();return true;}});
 }
 function saveVisit(next,redraw=true){const saved=push(game.mode==='x01'?completeVisit(next):next,redraw);if(saved&&game.mode==='x01')window.scrollTo(0,0);return saved;}
 function visitFeedback(){const visit=game.lastVisit;if(game.mode!=='x01'||!visit||game.winner!==null)return '';return `<p class="visit-feedback ${visit.bust?'bust-feedback':''}" id="visit-feedback" role="status">${esc(visit.bust?t('{player}: Bust. The turn was cancelled.',{player:visit.name}):t('{player} scored {points}. {remaining} remaining.',{player:visit.name,points:visit.total,remaining:visit.score}))}</p>`;}
@@ -100,7 +123,7 @@ function gameView(){
  const finishTurn=$('#finish-turn');if(finishTurn)finishTurn.onclick=()=>saveVisit(game);
  if($('#next'))$('#next').onclick=()=>{let next=game;if(game.mode!=='golf')while(next.darts.length<3&&next.winner===null)next=throwDart(next,0,1);if(push(endTurn(next)))window.scrollTo(0,0);};
  $('#undo').onclick=()=>{if(history.length){commitState(history.at(-1),history.slice(0,-1));render();}};
- $('#leave').onclick=()=>{if(confirm(t('End the current game? Its saved data will be deleted.')))endSession();};$('#match-rules').onclick=()=>{showRules=true;rules(game.mode);};
+ $('#leave').onclick=confirmEndGame;$('#match-rules').onclick=()=>{showRules=true;rules(game.mode);};
  if(won){$('#rematch').onclick=()=>{const saved=commitState(createGame(game.mode,game.players.map(q=>q.name),game.options),[]);if(saved){continuingPlayers=null;inputMethod='total';}render();if(saved)window.scrollTo(0,0);};$('#another-mode').onclick=chooseAnotherMode;$('#end-session').onclick=endSession;}
  if(showRules)rules(game.mode);
 }
@@ -181,9 +204,9 @@ function languageSettings(){
 }
 
 function about(){
- const dialog=document.createElement('dialog');dialog.innerHTML=`<div class="dialog-heading"><h2>Oche Club</h2><button class="secondary" id="close-about" aria-label="${t("Close")}">✕</button></div><p class="eyebrow about-version">VERSION 1.0.8 · ${t("PLAY AT THE SAME BOARD")}</p><h3>${t("Your game stays with you")}</h3><p>${t("No ads, accounts, subscriptions or in-app purchases. Games and names stay on this device. The app sends us no information and uses no analytics or advertising tools.")}</p><h3>${t("Privacy and your data")}</h3><p>${t("Player names, your current game and undo history are stored on this device so you can continue later. Do not use sensitive information as player names. Data is not synced to other devices. Delete it below or clear the app’s storage in Android settings. Uninstalling also removes the app’s local data.")}</p><p id="privacy-error" role="alert"></p><button class="secondary" id="clear-data">${t("Delete saved game and player names")}</button><p class="muted">${t("Local rules vary. See the rulebook for the variants we use. Barlow Condensed and DM Sans are used under the SIL Open Font License.")}</p>`;
- app.append(dialog);dialog.showModal();dialog.querySelector('#close-about').onclick=()=>dialog.close();dialog.onclose=()=>dialog.remove();dialog.querySelector('#clear-data').onclick=()=>{if(confirm(t("Delete the saved game, all player names and undo history?"))){if(commitState(null,[])){dialog.close();landing();}else dialog.querySelector('#privacy-error').textContent=storageWarning;}};
+ const dialog=document.createElement('dialog');dialog.innerHTML=`<div class="dialog-heading"><h2>Oche Club</h2><button class="secondary" id="close-about" aria-label="${t("Close")}">✕</button></div><p class="eyebrow about-version">VERSION 1.0.9 · ${t("PLAY AT THE SAME BOARD")}</p><h3>${t("Your game stays with you")}</h3><p>${t("No ads, accounts, subscriptions or in-app purchases. Games and names stay on this device. The app sends us no information and uses no analytics or advertising tools.")}</p><h3>${t("Privacy and your data")}</h3><p>${t("Player names, your current game and undo history are stored on this device so you can continue later. Do not use sensitive information as player names. Data is not synced to other devices. Delete it below or clear the app’s storage in Android settings. Uninstalling also removes the app’s local data.")}</p><p id="privacy-error" role="alert"></p><button class="secondary" id="clear-data">${t("Delete saved game and player names")}</button><p class="muted">${t("Local rules vary. See the rulebook for the variants we use. Barlow Condensed and DM Sans are used under the SIL Open Font License.")}</p>`;
+ app.append(dialog);dialog.showModal();dialog.querySelector('#close-about').onclick=()=>dialog.close();dialog.onclose=()=>dialog.remove();dialog.querySelector('#clear-data').onclick=()=>confirmAction({title:t('Delete saved data?'),description:t('This removes the saved game, player names and undo history from this device.'),accept:t('Delete data'),cancel:t('Keep data'),destructive:true,onConfirm:()=>{if(!commitState(null,[]))return false;dialog.close();landing();return true;}});
 }
-window.ocheClubBack=()=>{const d=document.querySelector('dialog[open]');if(d){d.close();return true;}if(screen==='setup'){landing();return true;}if(screen==='home'&&continuingPlayers){returnToResult();return true;}return false;};
+window.ocheClubBack=()=>{const d=[...document.querySelectorAll('dialog[open]')].at(-1);if(d){d.close();return true;}if(screen==='setup'){landing();return true;}if(screen==='home'&&continuingPlayers){returnToResult();return true;}if(typeof window.OcheApp?.close==='function'){confirmCloseApp();return true;}return false;};
 function render(){if(game)gameView();else landing();}
 render();

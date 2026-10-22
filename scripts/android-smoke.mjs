@@ -26,7 +26,7 @@ async function until(check,message,timeout=45000){
 const badging=run(aapt,['dump','badging',apk]);
 const packageName=badging.match(/^package: name='([^']+)'/m)?.[1];
 const versionCode=Number(badging.match(/versionCode='(\d+)'/)?.[1]);
-const durableStorage=versionCode>=3,tapInput=versionCode>=7,guidedVariants=versionCode>=8,autoVisit=versionCode>=9;
+const durableStorage=versionCode>=3,tapInput=versionCode>=7,guidedVariants=versionCode>=8,autoVisit=versionCode>=9,themedDialogs=versionCode>=10;
 const activity=badging.match(/^launchable-activity: name='([^']+)'/m)?.[1];
 assert.ok(packageName&&activity,'APK must declare a launchable activity.');
 assert.equal(android('shell','getprop','ro.kernel.qemu').trim(),'1','Device must be an emulator.');
@@ -49,6 +49,8 @@ class CDP {
    this.pending.set(id,{resolve,reject,timer});this.socket.send(JSON.stringify({id,method,params}));
   });
  }
+ // A deliberately closing WebView may disappear before acknowledging its final input.
+ send(method,params={}){this.socket.send(JSON.stringify({id:this.next++,method,params}));}
  async evaluate(expression){
   const reply=await this.call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});
   if(reply.exceptionDetails)throw new Error('WebView JavaScript exception: '+JSON.stringify(reply.exceptionDetails));
@@ -78,13 +80,14 @@ function closeWebView(){
  if(cdp){cdp.close();cdp=null;}
  if(port){try{android('forward','--remove',`tcp:${port}`);}catch{}port=null;}
 }
-async function click(selector){
+async function click(selector,{closesPage=false}={}){
  const hit=await cdp.evaluate(`(()=>{const element=document.querySelector(${JSON.stringify(selector)});if(!element||element.disabled)return null;element.scrollIntoView({block:'center',inline:'center'});const r=element.getBoundingClientRect();if(!r.width||!r.height)return null;const x=r.left+r.width/2,y=r.top+r.height/2;const target=document.elementFromPoint(x,y);return {x,y,target:target?.outerHTML.slice(0,350)};})()`);
  assert.ok(hit,`Missing, hidden or disabled app control: ${selector}`);
  lastClick={selector,...hit};
  // Use real renderer input: SVG dart fields have no HTMLElement.click() method.
  await cdp.call('Input.dispatchMouseEvent',{type:'mousePressed',x:hit.x,y:hit.y,button:'left',clickCount:1});
- await cdp.call('Input.dispatchMouseEvent',{type:'mouseReleased',x:hit.x,y:hit.y,button:'left',clickCount:1});
+ const release={type:'mouseReleased',x:hit.x,y:hit.y,button:'left',clickCount:1};
+ if(closesPage)cdp.send('Input.dispatchMouseEvent',release);else await cdp.call('Input.dispatchMouseEvent',release);
 }
 
 async function activeScore(score){
@@ -115,6 +118,16 @@ async function prepareNativeBack(){
   android('shell','uiautomator','dump','/data/local/tmp/oche-window.xml');
   return android('shell','cat','/data/local/tmp/oche-window.xml').includes(`package="${packageName}"`);
  },'App accessibility window was not ready before Back.');
+}
+async function openThemedExit(title){
+ await prepareNativeBack();
+ android('shell','input','keyevent','4');
+ await until(()=>cdp.evaluate(`Boolean(document.querySelector('.confirmation-dialog[open]'))&&document.querySelector('#confirm-title')?.textContent.trim()===${JSON.stringify(title)}`),`Themed exit dialog did not appear: ${title}`);
+ assert.equal(await cdp.evaluate("document.querySelectorAll('dialog[open]').length"),1,'Exit confirmation must be one app dialog.');
+}
+async function cancelThemedDialog(){
+ await click('#confirm-cancel');
+ await until(()=>cdp.evaluate("!document.querySelector('.confirmation-dialog[open]')"),'Cancel did not dismiss the app confirmation.');
 }
 async function hitDart(n,m=1){
  if(!tapInput){await click(`[data-mult="${m}"]`);await click(`[data-hit="${n}"]`);return;}
@@ -168,6 +181,7 @@ try{
   assert.equal(await cdp.evaluate('document.documentElement.lang'),'en');
  }
  if(durableStorage)assert.equal(await cdp.evaluate("typeof window.OcheGameStore?.load"),'function','Android durable game store is missing.');
+ if(themedDialogs)assert.equal(await cdp.evaluate("typeof window.OcheApp?.close"),'function','Android close-app bridge is missing.');
  stage='player names';await click('[data-mode="x01"]');
  // Type names through renderer input, as fresh games no longer have defaults.
  await typePlayers(['Player 1','Player 2']);
@@ -218,20 +232,43 @@ try{
   assert.equal(await cdp.evaluate('document.documentElement.lang'),'da');
   assert.match(await cdp.evaluate('document.querySelector("#rules").textContent'),/Spilleregler/);
   assert.match(await cdp.evaluate('window.OcheLocale.language()'),/^da/);
-  // Check a real Android resource dialog as well as the translated WebView.
-  await prepareNativeBack();
-  android('shell','input','keyevent','4');
-  await until(()=>{
-   android('shell','uiautomator','dump','/data/local/tmp/oche-window.xml');
-   return android('shell','cat','/data/local/tmp/oche-window.xml').includes('Luk Oche Club?');
-  },'Danish native exit dialog did not appear.');
-  android('shell','input','keyevent','4');
+  if(themedDialogs){
+   const savedBeforeExit=await cdp.evaluate('window.OcheGameStore.load()');
+   await openThemedExit('Luk Oche Club?');
+   await cancelThemedDialog();
+   assert.equal(await cdp.evaluate('window.OcheGameStore.load()'),savedBeforeExit,'Cancelling exit must preserve the saved game.');
+   // A second real Android Back dismisses the top app dialog without another popup.
+   await openThemedExit('Luk Oche Club?');
+   android('shell','input','keyevent','4');
+   await until(()=>cdp.evaluate("!document.querySelector('dialog[open]')"),'Android Back did not dismiss the themed exit dialog.');
+   assert.equal(await cdp.evaluate('window.OcheGameStore.load()'),savedBeforeExit,'Dismissing exit with Back must preserve the saved game.');
+  }else{
+   // Older previews used an Android resource dialog rather than the app's own design.
+   await prepareNativeBack();
+   android('shell','input','keyevent','4');
+   await until(()=>{
+    android('shell','uiautomator','dump','/data/local/tmp/oche-window.xml');
+    return android('shell','cat','/data/local/tmp/oche-window.xml').includes('Luk Oche Club?');
+   },'Danish native exit dialog did not appear.');
+   android('shell','input','keyevent','4');
+  }
   stage='English Android app language';
   closeWebView();android('shell','am','force-stop',packageName);
   android('shell','cmd','locale','set-app-locales',packageName,'--user','0','--locales','en');
   launch();await connectWebView();await recordedScore(401);
   assert.equal(await cdp.evaluate('document.documentElement.lang'),'en');
   assert.match(await cdp.evaluate('document.querySelector("#rules").textContent'),/Rules/);
+  if(themedDialogs){
+   stage='English themed confirmations';
+   const savedBeforeConfirmation=await cdp.evaluate('window.OcheGameStore.load()');
+   await openThemedExit('Close Oche Club?');
+   await cancelThemedDialog();
+   await click('#leave');
+   await until(()=>cdp.evaluate("Boolean(document.querySelector('.confirmation-dialog[open]'))"),'End game did not use a themed confirmation.');
+   assert.match(await cdp.evaluate("document.querySelector('#confirm-title').textContent"),/End.*game/i);
+   await cancelThemedDialog();
+   assert.equal(await cdp.evaluate('window.OcheGameStore.load()'),savedBeforeConfirmation,'Cancelling End game must preserve score, player and history.');
+  }
   if(tapInput){
    stage='in-app language selection';
    const savedBeforeLanguage=await cdp.evaluate('window.OcheGameStore.load()');
@@ -318,7 +355,19 @@ try{
  assert.ok(!crashes.includes(packageName),'Android recorded an app crash. See artifacts/android-crash-log.txt.');
  const screenshot=execFileSync(adb,['-s',serial,'exec-out','screencap','-p'],{timeout:15000,maxBuffer:8*1024*1024});
  await writeFile(`${reportPrefix}-native.png`,screenshot);
- if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`\nAndroid API ${api}: exact APK installation, same-key reinstall, real scoring and process-death persistence passed. For versionCode 4+, English/Danish Android app language and Danish native dialog also passed. For versionCode 6+, named-player entry, rematch, cross-mode roster reuse and session ending passed. For versionCode 7+, the visible regular keypad, atomic repeated-tap triple entry and durable in-app language selection also passed. For versionCode 8+, top scores, mode guidance, accelerated Around with Double/Triple/Bull stages and extended Cricket category credit also passed. For versionCode 9+, calculator and numeric Done advance once, one undo restores the pre-calculator turn, the next player persists across process death and language changes, checkout help shows three legal alternatives, and the Around Double/Triple buttons complete their stages.\n`);
+ if(themedDialogs){
+  stage='confirmed app close and relaunch';
+  const savedBeforeClose=await cdp.evaluate('window.OcheGameStore.load()');
+  await openThemedExit('Close Oche Club?');
+  await click('#confirm-accept',{closesPage:true});
+  await until(()=>!android('shell','dumpsys','activity','activities').split('\n').some(line=>/ResumedActivity/.test(line)&&line.includes(packageName)),'Close app did not finish its Android Activity.');
+  closeWebView();launch();await connectWebView();
+  await until(()=>cdp.evaluate(`window.OcheGameStore.load()===${JSON.stringify(savedBeforeClose)}`),'Saved game changed after a confirmed close and relaunch.');
+  await until(()=>cdp.evaluate("Boolean(document.querySelector('.match'))&&!document.querySelector('dialog[open]')"),'Relaunch did not restore the saved match without a popup.');
+  console.log('Native themed-dialog checks passed: English/Danish exit, Cancel, Android Back dismissal, End game cancellation, confirmed Activity close and saved-game relaunch.');
+ }
+
+ if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`\nAndroid API ${api}: exact APK installation, same-key reinstall, real scoring and process-death persistence passed. For versionCode 4+, English/Danish Android app language passed; versions 4–9 also check the former native exit dialog. For versionCode 6+, named-player entry, rematch, cross-mode roster reuse and session ending passed. For versionCode 7+, the visible regular keypad, atomic repeated-tap triple entry and durable in-app language selection also passed. For versionCode 8+, top scores, mode guidance, accelerated Around with Double/Triple/Bull stages and extended Cricket category credit also passed. For versionCode 9+, calculator and numeric Done advance once, one undo restores the pre-calculator turn, the next player persists across process death and language changes, checkout help shows three legal alternatives, and the Around Double/Triple buttons complete their stages. For versionCode 10+, English/Danish themed exit dialogs, Cancel, Back dismissal, End game cancellation and confirmed Close app/relaunch preserve the saved match.\n`);
  console.log('Native Android smoke passed: install, same-key reinstall, launch, 12-game UI, dartboard Done, undo, numeric score, repeated-tap exact dart entry and process-death persistence.');
 }catch(error){
  let web;
