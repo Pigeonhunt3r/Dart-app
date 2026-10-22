@@ -54,6 +54,14 @@ for(const {locale,native,language,label} of [
  assert.equal(await localized.locator('#rules').innerText(),`${label} →`);
  await localized.close();
 }
+for(const locale of ['en-US','da-DK']){
+ const oldWebView=await browser.newPage({locale});
+ await oldWebView.addInitScript(()=>{window.structuredClone=undefined;});
+ await oldWebView.goto(base);
+ assert.match(await oldWebView.locator('#app').innerText(),locale==='da-DK'?/Opdater Android System WebView/:/Update Android System WebView/);
+ assert.equal(await oldWebView.locator('.game-card').count(),0);
+ await oldWebView.close();
+}
 assert.deepEqual(errors,[]);
 console.log('Language checks passed: English UI and all 12 rulebooks, totals, checkout win, private names, offline reload, Danish system locale, unsupported-language fallback and Android app-locale priority.');
 await browser.close();

@@ -2,11 +2,13 @@
 
 This records development checks, not commercial store readiness.
 
-## Local Preview 1.0.3 checks
+## Local Preview 1.0.4 checks
 
 - Frozen-lockfile npm installation, JavaScript syntax and **41 unit tests: 41 passed, 0 failed, 0 skipped**. Covers all game modes, checkout routes, totals, Bust, storage migration/failure/deletion and language selection.
 - Danish browser regression: all 12 games and rulebooks, checkout victory, calculator, numeric totals, undo, privacy deletion, mobile layout and offline play.
 - English browser regression: all 12 rulebooks, goals/examples, numeric Done, checkout victory, saved names, privacy deletion and offline reload. Also checks Danish device locale, English fallback for German and Android app-locale priority over browser locale.
+- Storage UI fault checks: failed game start, score, undo and privacy deletion retain the previous state, retries succeed, deletion survives reload, and a 120-turn game retains 200 undo actions and can still undo.
+- The classic compatibility bootstrap parses as ES5; English and Danish update messages appear when modern WebView features are unavailable.
 - Android debug APK, unsigned release APK and unsigned release AAB build with SDK/target 36, JDK 21 and checksum-pinned Gradle 8.13. Android lint: **0 errors, 2 warnings** (newer AndroidX Activity available, JavaScript required for packaged assets). No lint baseline or disabled errors.
 - APK signatures, ZIP integrity, alignment, identity, preserved Preview certificate and exact bundled web assets are verified during snapshot creation. No native `.so` libraries or ABI restriction, Internet permission or billing permission.
 - PWA export contains only public app assets. No public web deployment or native IPA is included.
@@ -17,9 +19,9 @@ GitHub Actions [39765506469](https://github.com/Pigeonhunt3r/Dart-app/actions/ru
 
 The preceding Preview 1.0.1 diagnosis failed specifically at **process-death persistence**: score 401 was displayed before the stop, then reopened at 501. Private SharedPreferences commits in 1.0.2 fixed that independently confirmed defect. Storage is exposed only through fixed-purpose load/save methods; 1.0.3 adds a read-only locale method. Navigation and requests remain restricted to packaged assets.
 
-## Preview 1.0.3 native language checks
+## Preview 1.0.4 native language checks
 
-The new native smoke also changes the Android app language to Danish, checks score 401 and translated controls, opens the real Danish exit dialog, then switches to English and rechecks the score. Both API 35 and 36 must pass on the exact tagged APK before release. These new checks are pending at this source commit; consult the associated Actions result for their completed outcome.
+The native smoke also changes the Android app language to Danish, checks score 401 and translated controls, opens the real Danish exit dialog, then switches to English and rechecks the score. Both API 35 and 36 must pass on the exact tagged APK before release. These new checks are pending at this source commit; consult the associated Actions result for their completed outcome.
 
 ## Samsung device report
 

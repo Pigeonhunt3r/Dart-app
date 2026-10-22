@@ -1,5 +1,7 @@
 // English is the fallback. Danish follows the device’s preferred language.
 export const DANISH=Object.freeze({
+  "Your change could not be saved. Please try again.": "Din ændring kunne ikke gemmes. Prøv igen.",
+  "You can undo the last 200 actions.": "Du kan fortryde de seneste 200 handlinger.",
   "Oche Club · One more throw": "Oche Club · Ét kast mere",
   "points": "point",
   " points": " point",

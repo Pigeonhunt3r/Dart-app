@@ -1,6 +1,6 @@
 {
   "name": "oche-club",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "build:web": "node scripts/export-web.mjs",
     "android:debug": "bash scripts/android.sh assembleDebug",
     "android:release": "bash scripts/android.sh assembleRelease bundleRelease",
-    "test:browser": "node e2e/browser.mjs && node e2e/languages.mjs",
+    "test:browser": "node e2e/browser.mjs && node e2e/languages.mjs && node e2e/storage.mjs",
     "package:downloads": "node scripts/package-downloads.mjs",
     "test:android": "node scripts/android-smoke.mjs"
   },

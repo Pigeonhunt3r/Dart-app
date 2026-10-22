@@ -22,6 +22,7 @@ import java.io.ByteArrayInputStream;
 public final class MainActivity extends ComponentActivity {
     private WebView webView;
     private AlertDialog exitDialog;
+    private static GameStore gameStore;
     private static final String HOST = "appassets.androidplatform.net";
     private static final String START = "https://" + HOST + "/assets/www/index.html";
 
@@ -74,8 +75,9 @@ public final class MainActivity extends ComponentActivity {
         webView.setWebChromeClient(new android.webkit.WebChromeClient());
         // Only packaged pages can load. These two methods acknowledge disk writes
         // before the scoreboard advances, including when Android kills the process.
-        webView.addJavascriptInterface(new GameStore(
-            getSharedPreferences("oche-game", MODE_PRIVATE)), "OcheGameStore");
+        if (gameStore == null) gameStore = new GameStore(
+            getApplicationContext().getSharedPreferences("oche-game", MODE_PRIVATE));
+        webView.addJavascriptInterface(gameStore, "OcheGameStore");
         webView.addJavascriptInterface(new DeviceLocale(), "OcheLocale");
         webView.loadUrl(START);
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -85,16 +87,24 @@ public final class MainActivity extends ComponentActivity {
 
     public static final class GameStore {
         private final SharedPreferences preferences;
-        GameStore(SharedPreferences preferences) { this.preferences = preferences; }
-
-        @JavascriptInterface public String load() {
-            return preferences.getString("game", null);
+        private String committedState;
+        GameStore(SharedPreferences preferences) {
+            this.preferences = preferences;
+            committedState = preferences.getString("game", null);
         }
 
-        @JavascriptInterface public boolean save(String value) {
-            if (value == null || value.length() > 4 * 1024 * 1024) return false;
+        @JavascriptInterface public synchronized String load() {
+            return committedState;
+        }
+
+        @JavascriptInterface public synchronized boolean save(String value) {
+            if (value == null || value.length() > 8 * 1024 * 1024) return false;
             // An empty value records deletion, so old WebView data cannot reappear.
-            return preferences.edit().putString("game", value).commit();
+            if (!preferences.edit().putString("game", value).commit()) return false;
+            // SharedPreferences updates its in-memory map even on disk failure.
+            // Expose only acknowledged state, including across Activity recreation.
+            committedState = value;
+            return true;
         }
     }
 
