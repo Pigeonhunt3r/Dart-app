@@ -1,15 +1,18 @@
-Oche Club development preview for personal testing.
+Oche Club Preview 1.0.1 — installation fix for personal testing.
 
 Downloads:
 
-- **OcheClub-1.0.0-debug.apk** — directly installable Android debug build, Android 8.0+ with a current Android System WebView. The application's internal version is 1.0.0. Enable installation from the selected source if Android requires it.
-- **OcheClub-web.zip** — installable web version after hosting on HTTPS; Android and iPhone can add it to the home screen. This is not a native iPhone IPA and no website is deployed by this release.
-- **SHA256SUMS.txt** — checksums of the two downloads.
+- **OcheClub-1.0.1-preview.apk** — signed Android Preview APK, Android 8.0+ with an up-to-date Android System WebView.
+- **OcheClub-web.zip** — web installation after HTTPS hosting; supports Android and iPhone browser home-screen installation. No native iPhone IPA is included.
+- **BUILD_INFO.json** — public package identity, signing-certificate fingerprint and source hashes. Contains no private signing key.
+- **SHA256SUMS.txt** — download checksums.
 
-Includes 12 dart game modes, X01 alternative checkout combinations, per-game beginner rulebooks, the interactive dartboard calculator, numeric X01/Count Up turn entry, Bust, undo and local match saving.
+Install this new **Oche Club Preview** package. Its ID is `dk.pigeonarmy.ocheclub.preview`, so it installs alongside the earlier `dk.pigeonarmy.ocheclub` test app and does not require deleting that app or its saved games. Games saved in the old app remain in that app and are not automatically copied to Preview.
 
-This is a test prerelease. Automated/browser tests and Android build/lint have passed locally. Native real-phone testing is still required; the cloud software emulator did not finish booting. There is no signed commercial Play Store release or native iPhone app yet. Final visual branding and the final app logo are still planned.
+The earlier alpha offered two APKs with the same app ID but different signing certificates. Android rejects one as an update over the other. This release publishes the exact versioned APK from the repository, without rebuilding or re-signing it during publication. Snapshot verification rejects a changed signing certificate or stale source assets. The private Preview key stays outside Git; the publisher must preserve it securely for compatible Preview updates.
 
-Debug builds made on different machines may use different debug signing keys and may require uninstalling the earlier test app before installation, which removes its local game data. A stable publisher-controlled signing key is required for commercial updates. Release signing keys are deliberately not included.
+The release workflow installs and reinstalls the exact download in an isolated accelerated Android emulator and checks real WebView gameplay before publishing. Check the associated GitHub Actions result for current validation. Real-phone testing is still required; this is a development preview, not a commercially signed Play Store release.
 
-See store/PLAY_STORE.md, store/DISTRIBUTION.md and PRIVACY.md in the repository for remaining publication requirements.
+If Android still refuses installation, note the exact error and the phone model/Android version. The generic "App not installed" screen can also have causes unrelated to signing. Do not delete an older app merely to try this separate Preview package.
+
+Includes 12 game modes, alternative X01 finishes, beginner info rulebooks, dartboard calculator, numeric totals, Bust, undo and local saving. Final branding, commercial signing, Play Store publication and native iPhone work remain separate.

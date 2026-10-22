@@ -1,5 +1,7 @@
 # Android, iPhone and direct installation
 
+For the latest test download, use **Oche Club Preview 1.0.1** from `downloads/README.md`. Its separate preview ID avoids conflicts with the original alpha app.
+
 The shared scorekeeping code and UI are local web assets. Android packages those assets in a native application shell. Export them with `npm run build:web` for an installable web app and for the later iOS shell; no desktop Node server is embedded in the native Android app.
 
 | Route | File or delivery | Status / prerequisites |
@@ -19,6 +21,8 @@ The shared scorekeeping code and UI are local web assets. Android packages those
 2. Open it in the phone's file manager and allow installation from that specific source if Android asks. This is a **debug build for testing**, not the paid release.
 3. With USB debugging and Android platform tools available, an alternative is `adb install -r android/app/build/outputs/apk/debug/app-debug.apk`.
 4. Test in airplane mode, close/reopen, rotate the screen and play full matches.
+
+Published previews now copy a verified immutable APK snapshot instead of re-signing a new CI build. Preserve the existing private Preview key outside Git for future Preview updates.
 
 For a direct production APK, use your own release signing key. An unsigned APK is not installable. Preserve the signing key and increase `versionCode` for updates. If Play App Signing uses a different app-signing certificate from your direct APK, the two builds cannot replace each other in place. Plan key/channel ownership before launch; an upload key is not necessarily the Play app-signing key. Use separate package IDs for independent channels if that is the chosen strategy.
 

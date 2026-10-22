@@ -1,3 +1,5 @@
+> Superseded: use [Oche Club Preview 1.0.1](../README.md). The original local and CI test APKs have different signing certificates and cannot update one another.
+
 Oche Club development preview for personal testing.
 
 Downloads:
