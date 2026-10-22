@@ -25,11 +25,14 @@ async function until(check,message,timeout=45000){
 }
 const badging=run(aapt,['dump','badging',apk]);
 const packageName=badging.match(/^package: name='([^']+)'/m)?.[1];
+const durableStorage=Number(badging.match(/versionCode='(\d+)'/)?.[1])>=3;
 const activity=badging.match(/^launchable-activity: name='([^']+)'/m)?.[1];
 assert.ok(packageName&&activity,'APK must declare a launchable activity.');
 assert.equal(android('shell','getprop','ro.kernel.qemu').trim(),'1','Device must be an emulator.');
 assert.equal(android('shell','getprop','sys.boot_completed').trim(),'1','Emulator must finish booting.');
 await mkdir('artifacts',{recursive:true});
+const api=android('shell','getprop','ro.build.version.sdk').trim();
+const reportPrefix=`artifacts/android-api${api}`;
 
 let cdp,port,lastClick,stage='install';
 class CDP {
@@ -84,7 +87,7 @@ async function click(selector){
 }
 
 async function activeScore(score){
- await until(()=>cdp.evaluate(`document.querySelector('.active-player')?.innerText.includes(${JSON.stringify(String(score))})`),`Active score did not become ${score}.`);
+ await until(()=>cdp.evaluate(`document.querySelector('.active-player > strong')?.textContent.trim()===${JSON.stringify(String(score))}`),`Active score did not become ${score}.`);
 }
 function launch(){
  const output=android('shell','am','start','-W','-n',`${packageName}/${activity}`);
@@ -106,6 +109,7 @@ try{
  console.log('APK installation and same-certificate reinstall passed.');
  stage='launch';android('logcat','-c');launch();await connectWebView();
  await until(()=>cdp.evaluate("document.querySelectorAll('.game-card').length===12"),'Android WebView did not render the 12 game cards.');
+ if(durableStorage)assert.equal(await cdp.evaluate("typeof window.OcheGameStore?.load"),'function','Android durable game store is missing.');
  stage='dartboard score';await click('[data-mode="x01"]');await click('.start-button');await activeScore(501);
  await click('#calculator');
  await click('[data-board-n="20"][data-board-m="3"]');await click('#calculator-done');await activeScore(441);
@@ -113,23 +117,28 @@ try{
  stage='numeric score';await click('#calculator');await click('#total-tab');
  for(const digit of ['1','0','0'])await click(`[data-digit="${digit}"]`);
  await click('#calculator-done');await activeScore(401);
+ if(await cdp.evaluate("typeof window.OcheGameStore?.load==='function'")){
+  const persisted=await cdp.evaluate('JSON.parse(window.OcheGameStore.load())');
+  assert.equal(persisted.game.players[persisted.game.active].score,401,'Numeric score must be committed before it is shown.');
+ }
  // Kill/relaunch the native process, not only the document, and verify persisted state.
  console.log('Native dartboard, undo and numeric score passed.');
  stage='process-death persistence';closeWebView();android('shell','am','force-stop',packageName);launch();await connectWebView();await activeScore(401);
  const activities=android('shell','dumpsys','activity','activities');
  assert.ok(activities.split('\n').some(line=>/ResumedActivity/.test(line)&&line.includes(packageName)),'App is not the resumed Android activity.');
  const crashes=android('logcat','-d','-b','crash');
- await writeFile('artifacts/android-crash-log.txt',crashes);
+ await writeFile(`${reportPrefix}-crash-log.txt`,crashes);
  assert.ok(!crashes.includes(packageName),'Android recorded an app crash. See artifacts/android-crash-log.txt.');
  const screenshot=execFileSync(adb,['-s',serial,'exec-out','screencap','-p'],{timeout:15000,maxBuffer:8*1024*1024});
- await writeFile('artifacts/android-native.png',screenshot);
+ await writeFile(`${reportPrefix}-native.png`,screenshot);
+ if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`\nAndroid API ${api}: exact APK installation, same-key reinstall, real scoring and process-death persistence passed.\n`);
  console.log('Native Android smoke passed: install, same-key reinstall, launch, 12-game UI, dartboard Done, undo, numeric score and process-death persistence.');
 }catch(error){
  let web;
  if(cdp){try{web=await cdp.evaluate("({url:location.href,cards:document.querySelectorAll('.game-card').length,player:document.querySelector('.active-player')?.innerText,dialog:document.querySelector('dialog[open]')?.innerText,darts:[...document.querySelectorAll('.dart-slot')].map(e=>e.innerText),body:document.body.innerText.slice(0,1800)})");}catch{}}
- const detail=JSON.stringify({stage,error:error.message,lastClick,web});
+ const detail=JSON.stringify({api,stage,error:error.message,lastClick,web});
  console.error('::error title=Native Android diagnostic::'+detail.slice(0,5000).replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A'));
  if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,'\n## Native Android diagnostic\n\n    '+detail.replaceAll('\n','\n    ')+'\n');
- try{await writeFile('artifacts/android-failure-logcat.txt',android('logcat','-d','-t','1000'));}catch{}
+ try{await writeFile(`${reportPrefix}-failure-logcat.txt`,android('logcat','-d','-t','1000'));}catch{}
  throw error;
 }finally{closeWebView();}
