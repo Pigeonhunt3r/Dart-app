@@ -1,23 +1,24 @@
+import {t} from './i18n.js';
 export const MODES=[
-{id:'x01',name:'501 & X01',tag:'Klassikeren',icon:'01',description:'301, 501, 701 eller 1001. Ram præcis nul.',rules:'Træk dine point fra startscoren. Du skal ende præcis på 0. Med double-out skal sidste pil være en double (bull tæller). Går du under 0, efterlader 1 med double-out eller lukker forkert, er turen bust: hele turens point annulleres.'},
-{id:'cricket',name:'Cricket',tag:'Taktisk',icon:'✳',description:'Luk 15–20 og bull. Saml point undervejs.',rules:'Luk 15, 16, 17, 18, 19, 20 og bull med tre mærker på hvert tal. Single giver ét, double to, triple tre mærker. Ekstra træffere giver point, så længe mindst én modstander ikke har lukket tallet. Luk alt og hav mindst lige så mange point som alle andre for at vinde.'},
-{id:'cutthroat',name:'Cut-throat Cricket',tag:'Taktisk',icon:'⚔',description:'Cricket med strafpoint til modstanderne.',rules:'Som Cricket, men overskydende træffere giver point til hver modstander, der ikke har lukket tallet. Luk alle tal og hav færrest point (delt lavest er nok) for at vinde.'},
-{id:'around',name:'Jorden rundt',tag:'Præcision',icon:'◎',description:'Rejs fra 1 til 20 og slut på bull.',rules:'Ram 1 til 20 i rækkefølge, og slut med bull. Alle multiplikatorer tæller som én korrekt træffer. Du må ramme flere forskellige mål i samme tur. Første spiller gennem ruten vinder.'},
-{id:'clock',name:'Double-runden',tag:'Præcision',icon:'◷',description:'Alle 20 doubler. Den ultimative træning.',rules:'Ram double 1 til double 20 i rækkefølge. Kun den aktuelle double tæller. Første spiller, der rammer double 20, vinder.'},
-{id:'shanghai',name:'Shanghai',tag:'7 runder',icon:'✧',description:'Single, double og triple på samme tal.',rules:'Spil syv runder med målene 1 til 7. Kun rundens tal giver point. En single, en double og en triple af rundens tal i samme tur er Shanghai og giver øjeblikkelig sejr. Ellers vinder højeste score efter syv runder; lige score giver delt sejr.'},
-{id:'halve',name:'Halve-it',tag:'9 runder',icon:'½',description:'Ram målet — eller halver din score.',rules:'Start på 40. Målene er 15, 16, double, 17, 18, triple, 19, 20 og bull. Kun træffere på målet giver point. Hvis ingen af turens tre pile rammer målet, halveres scoren (rundet ned). Højeste score efter ni runder vinder.'},
-{id:'countup',name:'Count Up',tag:'8 runder',icon:'↑',description:'24 pile. Hvor mange point kan du samle?',rules:'Alle point tæller. Hver spiller får otte ture med tre pile. Højeste samlede score vinder; lige score giver delt sejr.'},
-{id:'baseball',name:'Baseball',tag:'9 innings',icon:'◇',description:'Ni innings. Slå runs på rundens tal.',rules:'I inning 1 til 9 er rundens nummer målet. Single giver ét run, double to og triple tre. Andre felter giver nul. Flest runs efter ni innings vinder; lige score giver delt sejr.'},
-{id:'killer',name:'Killer',tag:'Overlevelse',icon:'ϟ',description:'Bliv killer, og tag modstandernes liv.',rules:'Spillerne får forskellige mål fra 1 og op. Alle starter med tre liv. Ram din egen double for at blive killer. Derefter koster hver pil i en modstanders double dem ét liv. Mister en killer liv, mistes killer-status. Ram egen double igen for at genaktivere den. Sidste overlevende vinder.'},
-{id:'elimination',name:'Elimination',tag:'Til 301',icon:'⊘',description:'Nå 301, og nulstil dine modstandere.',rules:'Byg din score fra 0 til præcis 301. Efter hver pil nulstilles andre spillere med præcis din nye score. Går en pil over 301, er hele turen bust og både din score og modstandernes scorer føres tilbage til turens start. Første spiller på 301 vinder.'},
-{id:'golf',name:'Golf',tag:'9 huller',icon:'⚑',description:'Færrest slag over ni huller vinder.',rules:'Hul 1 til 9 bruger samme nummer som mål. Double giver 1 slag, triple 2, single 3 og forbi giver 5. Den SIDSTE kastede pil bestemmer hullets score. Du må stoppe turen tidligt for at beholde et godt resultat. Færrest slag efter ni huller vinder.'}
+{id:'x01',name:'501 & X01',tag:t("The classic"),icon:'01',description:t("301, 501, 701 or 1001. Reach exactly zero."),rules:t("Subtract each score from your starting total and reach exactly 0. In double-out, your last dart must be a double, including bullseye. Going below 0, leaving 1 in double-out, or finishing on the wrong field is a bust: every point from that turn is cancelled.")},
+{id:'cricket',name:'Cricket',tag:t("Tactical"),icon:'✳',description:t("Close 15–20 and bull. Score along the way."),rules:t("Close 15, 16, 17, 18, 19, 20 and bull with three marks on each target. A single gives one mark, a double two and a triple three. Extra hits score points while at least one opponent has that target open. Close every target and have at least as many points as every opponent to win.")},
+{id:'cutthroat',name:'Cut-throat Cricket',tag:t("Tactical"),icon:'⚔',description:t("Cricket with penalty points for your opponents."),rules:t("Play Cricket, but extra hits add points to every opponent who has not closed that target. Close every target and have the lowest score to win. A tie for the lowest score is enough.")},
+{id:'around',name:t("Around the World"),tag:t("Precision"),icon:'◎',description:t("Travel from 1 to 20 and finish on bull."),rules:t("Hit 1 through 20 in order, then bull. Singles, doubles and triples each count as one successful hit. You may advance through several targets in one turn. The first player to complete the route wins.")},
+{id:'clock',name:t("Around the Doubles"),tag:t("Precision"),icon:'◷',description:t("All 20 doubles. The ultimate practice round."),rules:t("Hit double 1 through double 20 in order. Only your current double counts. The first player to reach and hit double 20 wins.")},
+{id:'shanghai',name:'Shanghai',tag:t("7 rounds"),icon:'✧',description:t("Single, double and triple on the same number."),rules:t("Play seven rounds with targets 1 through 7. Only the current target scores. Hit its single, double and triple in the same turn for Shanghai and an immediate win. Otherwise, the highest score after seven rounds wins. Tied scores share the win.")},
+{id:'halve',name:'Halve-it',tag:t("9 rounds"),icon:'½',description:t("Hit the target or halve your score."),rules:t("Start at 40. The targets are 15, 16, double, 17, 18, triple, 19, 20 and bull. Only hits on the target score. If all three darts miss the target, halve your score, rounding down. The highest score after nine rounds wins.")},
+{id:'countup',name:'Count Up',tag:t("8 rounds"),icon:'↑',description:t("24 darts. How many points can you score?"),rules:t("Every point counts. Each player has eight turns of three darts. The highest total wins. Tied scores share the win.")},
+{id:'baseball',name:'Baseball',tag:'9 innings',icon:'◇',description:t("Nine innings. Score runs on the inning number."),rules:t("In innings 1 through 9, aim for the inning number. A single scores one run, a double two and a triple three. Other fields score nothing. The most runs after nine innings wins. Ties share the win.")},
+{id:'killer',name:'Killer',tag:t("Survival"),icon:'ϟ',description:t("Become a killer and take your opponents’ lives."),rules:t("Players receive different targets starting at 1, and three lives each. Hit your own double to become a killer. Then each dart in an opponent’s double takes one of their lives. A killer who loses a life also loses killer status: hit your own double again to regain it. The last survivor wins.")},
+{id:'elimination',name:'Elimination',tag:t("Race to 301"),icon:'⊘',description:t("Reach 301 and reset your opponents’ scores."),rules:t("Build your score from 0 to exactly 301. After each dart, reset any opponent whose score matches your new score to 0. Going over 301 busts the whole turn: your score and every affected opponent’s score return to their values at the start of the turn. The first to reach 301 wins.")},
+{id:'golf',name:'Golf',tag:t("9 holes"),icon:'⚑',description:t("The fewest strokes over nine holes wins."),rules:t("Holes 1 through 9 use the hole number as their target. A double costs 1 stroke, a triple 2, a single 3 and a miss 5. Your LAST dart determines the hole’s score. Stop your turn early to keep a good result. The fewest strokes after nine holes wins.")}
 ];
 export function createGame(mode,names,options={}){
- if(!MODES.some(m=>m.id===mode))throw Error('Ukendt spil');
- if(names.length<1||names.length>8)throw Error('Vælg 1–8 spillere');
- if(['killer','elimination','cutthroat'].includes(mode)&&names.length<2)throw Error('Dette spil kræver mindst to spillere');
+ if(!MODES.some(m=>m.id===mode))throw Error(t("Unknown game"));
+ if(names.length<1||names.length>8)throw Error(t("Choose 1–8 players"));
+ if(['killer','elimination','cutthroat'].includes(mode)&&names.length<2)throw Error(t("This game needs at least two players"));
  const start=[301,501,701,1001].includes(Number(options.start))?Number(options.start):501;
- return {mode,options:{start,doubleOut:options.doubleOut!==false},players:names.map((name,i)=>({name:name.trim()||`Spiller ${i+1}`,score:mode==='x01'?start:mode==='halve'?40:0,marks:{},progress:1,lives:3,killer:false,target:i+1})),active:0,round:1,darts:[],winner:null,message:'',turnStart:null};
+ return {mode,options:{start,doubleOut:options.doubleOut!==false},players:names.map((name,i)=>({name:name.trim()||`${t("Player")} ${i+1}`,score:mode==='x01'?start:mode==='halve'?40:0,marks:{},progress:1,lives:3,killer:false,target:i+1})),active:0,round:1,darts:[],winner:null,message:'',turnStart:null};
 }
 export const points=d=>d.n*d.m;
 export function target(g){
@@ -28,17 +29,22 @@ export function target(g){
  if(g.mode==='killer')return 'D'+g.players[g.active].target;
  return null;
 }
-function finish(g,indices){g.winner=indices;g.message=indices.map(i=>g.players[i].name).join(' & ')+' vinder!';}
+export function gameMessage(state){
+ if(state.winner!==null)return t(state.winner.length===1?'{players} wins!':'{players} win!',{players:state.winner.map(i=>state.players[i].name).join(' & ')});
+ if(state.message?.startsWith('Bust!'))return t('Bust! Points from this turn are cancelled.');
+ return state.message||'';
+}
+function finish(g,indices){g.winner=indices;g.message=gameMessage(g);}
 function evaluateCricket(g){const p=g.players[g.active];if([15,16,17,18,19,20,25].every(n=>(p.marks[n]||0)>=3)&&g.players.every(q=>g.mode==='cricket'?p.score>=q.score:p.score<=q.score))finish(g,[g.active]);}
 export function throwDart(state,n,m=1){
  if(state.winner!==null||state.darts.length>=3) return state;
- if(!Number.isInteger(n)||![0,...Array.from({length:20},(_,i)=>i+1),25].includes(n)||![1,2,3].includes(m)||(n===25&&m===3)||(n===0&&m!==1))throw Error('Ugyldig pil');
+ if(!Number.isInteger(n)||![0,...Array.from({length:20},(_,i)=>i+1),25].includes(n)||![1,2,3].includes(m)||(n===25&&m===3)||(n===0&&m!==1))throw Error(t("Invalid dart"));
  const g=structuredClone(state);if(!g.turnStart)g.turnStart=structuredClone(g.players);
  const d={n,m};g.darts.push(d);g.message='';const p=g.players[g.active],v=points(d);
  if(g.mode==='x01'){
   const left=p.score-v;
   if(left<0||(g.options.doubleOut&&left===1)||(left===0&&g.options.doubleOut&&m!==2)){
-   g.players=structuredClone(g.turnStart);g.message='Bust! Turens point er annulleret.';while(g.darts.length<3)g.darts.push({n:0,m:1,bust:true});
+   g.players=structuredClone(g.turnStart);g.message=t("Bust! Points from this turn are cancelled.");while(g.darts.length<3)g.darts.push({n:0,m:1,bust:true});
   }else {p.score=left;if(left===0)finish(g,[g.active]);}
  }else if(['cricket','cutthroat'].includes(g.mode)){
   if(n>=15){const old=p.marks[n]||0,extra=Math.max(0,old+m-3);p.marks[n]=Math.min(3,old+m);
@@ -57,7 +63,7 @@ export function throwDart(state,n,m=1){
   if(m===2){if(n===p.target)p.killer=true;else if(p.killer){g.players.forEach((q,i)=>{if(i!==g.active&&q.target===n&&q.lives>0){q.lives--;q.killer=false;}});}}
   const alive=g.players.map((q,i)=>q.lives>0?i:-1).filter(i=>i>=0);if(alive.length===1)finish(g,alive);
  }else if(g.mode==='elimination'){
-  if(p.score+v>301){g.players=structuredClone(g.turnStart);g.message='Bust! Hele turen er annulleret.';while(g.darts.length<3)g.darts.push({n:0,m:1,bust:true});}
+  if(p.score+v>301){g.players=structuredClone(g.turnStart);g.message=t("Bust! The whole turn is cancelled.");while(g.darts.length<3)g.darts.push({n:0,m:1,bust:true});}
   else{p.score+=v;if(v>0)g.players.forEach((q,i)=>{if(i!==g.active&&q.score===p.score)q.score=0;});if(p.score===301)finish(g,[g.active]);}
  }
  return g;
@@ -73,7 +79,7 @@ export function endTurn(state){
  if(next<=g.active){if(limits[g.mode]&&g.round===limits[g.mode]){const scores=g.players.map(q=>q.score),best=g.mode==='golf'?Math.min(...scores):Math.max(...scores);finish(g,scores.map((v,i)=>v===best?i:-1).filter(i=>i>=0));return g;}g.round++;}
  g.active=next;g.darts=[];g.turnStart=null;g.message='';return g;
 }
-export function dartLabel(d){if(d.totalEntry)return 'Total '+d.total;if(d.notThrown||d.bust)return '—';return d.n===0?'Forbi':d.n===25?(d.m===2?'Bullseye':'Bull'):(d.m===3?'T':d.m===2?'D':'')+d.n;}
+export function dartLabel(d){if(d.totalEntry)return 'Total '+d.total;if(d.notThrown||d.bust)return '—';return d.n===0?t("Miss"):d.n===25?(d.m===2?'Bullseye':'Bull'):(d.m===3?'T':d.m===2?'D':'')+d.n;}
 // Shortest possible checkout using the darts left in this turn. Bullseye is a double.
 export function checkout(score,dartsLeft=3,doubleOut=true){
  if(!Number.isInteger(score)||score<=0||dartsLeft<1)return null;
@@ -123,7 +129,7 @@ export function bustTurn(state){
  if(g.turnStart)g.players=structuredClone(g.turnStart);
  g.turnStart??=structuredClone(g.players);
  while(g.darts.length<3)g.darts.push({n:0,m:1,bust:true});
- g.message='Bust! Turens point er annulleret.';
+ g.message=t("Bust! Points from this turn are cancelled.");
  return g;
 }
 function possibleTotals(count){
@@ -135,16 +141,16 @@ function possibleTotals(count){
 const TURN_TOTALS=possibleTotals(3),SETUP_TOTALS=possibleTotals(2);
 /** Manual entry is a full visit, so the unknown darts cannot be used for target games. */
 export function recordTotal(state,total,finalHit=''){
- if(!['x01','countup'].includes(state.mode))throw Error('Dette spil kræver de konkrete felter. Brug dartskiven.');
- if(state.winner!==null||state.darts.length)throw Error('Indtast kun en samlet score ved starten af en tur.');
- if(!Number.isInteger(total)||total<0||total>180||!TURN_TOTALS.has(total))throw Error('Indtast en mulig score fra 0 til 180 med højst tre pile.');
+ if(!['x01','countup'].includes(state.mode))throw Error(t("This game needs the exact fields hit. Use the dartboard."));
+ if(state.winner!==null||state.darts.length)throw Error(t("Enter a turn total only at the start of a turn."));
+ if(!Number.isInteger(total)||total<0||total>180||!TURN_TOTALS.has(total))throw Error(t("Enter a possible score from 0 to 180 using up to three darts."));
  const g=structuredClone(state),p=g.players[g.active];g.turnStart=structuredClone(g.players);
  g.darts=[{n:0,m:1,totalEntry:true,total},{n:0,m:1,notThrown:true},{n:0,m:1,notThrown:true}];g.message='';
  if(g.mode==='countup'){p.score+=total;return g;}
  const remaining=p.score-total;
  if(remaining<0||(g.options.doubleOut&&remaining===1))return bustTurn(g);
  if(remaining===0&&g.options.doubleOut){
-  if(!['double','bullseye','other'].includes(finalHit))throw Error('Vælg, hvad den sidste pil ramte.');
+  if(!['double','bullseye','other'].includes(finalHit))throw Error(t("Choose what the final dart hit."));
   const valid=finalHit==='bullseye'?SETUP_TOTALS.has(total-50):finalHit==='double'?Array.from({length:20},(_,i)=>(i+1)*2).some(n=>SETUP_TOTALS.has(total-n)):false;
   if(!valid)return bustTurn(g);
  }

@@ -4,7 +4,7 @@ await mkdir('artifacts',{recursive:true});
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',headless:true,args:['--no-sandbox']});
 const BASE=process.env.TEST_BASE_URL || 'http://127.0.0.1:3000';
-const page=await browser.newPage({viewport:{width:1440,height:1100}});
+const page=await browser.newPage({locale:'da-DK',viewport:{width:1440,height:1100}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.goto(BASE);
 await page.locator('.game-card').first().waitFor();

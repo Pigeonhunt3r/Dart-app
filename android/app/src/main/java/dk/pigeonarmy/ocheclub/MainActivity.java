@@ -76,6 +76,7 @@ public final class MainActivity extends ComponentActivity {
         // before the scoreboard advances, including when Android kills the process.
         webView.addJavascriptInterface(new GameStore(
             getSharedPreferences("oche-game", MODE_PRIVATE)), "OcheGameStore");
+        webView.addJavascriptInterface(new DeviceLocale(), "OcheLocale");
         webView.loadUrl(START);
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() { requestBack(); }
@@ -94,6 +95,12 @@ public final class MainActivity extends ComponentActivity {
             if (value == null || value.length() > 4 * 1024 * 1024) return false;
             // An empty value records deletion, so old WebView data cannot reappear.
             return preferences.edit().putString("game", value).commit();
+        }
+    }
+
+    public final class DeviceLocale {
+        @JavascriptInterface public String language() {
+            return getResources().getConfiguration().getLocales().get(0).toLanguageTag();
         }
     }
 

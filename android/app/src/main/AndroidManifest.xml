@@ -8,6 +8,7 @@
         android:fullBackupContent="false"
         android:usesCleartextTraffic="false"
         android:label="@string/app_label"
+        android:localeConfig="@xml/locales_config"
         android:icon="@drawable/ic_launcher"
         android:roundIcon="@drawable/ic_launcher"
         android:supportsRtl="true"

@@ -1,7 +1,6 @@
 <resources>
-    <string name="app_name">Oche Club</string>
-    <string name="close_title">Luk Oche Club?</string>
-    <string name="close_message">Dit igangværende spil gemmes automatisk på denne enhed.</string>
-    <string name="close_yes">Luk appen</string>
-    <string name="close_no">Spil videre</string>
+    <string name="close_title">Close Oche Club?</string>
+    <string name="close_message">Your current game saves automatically on this device.</string>
+    <string name="close_yes">Close app</string>
+    <string name="close_no">Keep playing</string>
 </resources>

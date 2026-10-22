@@ -1,6 +1,6 @@
 # Oche Club — Privacy policy
 
-Effective date: 22 October 2026 · App version: 1.0.2
+Effective date: 22 October 2026 · App version: 1.0.3
 
 Oche Club is an offline darts scorekeeping application. The application does not collect or transmit personal data to its publisher or third parties. It contains no advertising, analytics, account system, cloud synchronization, subscriptions or in-app purchases.
 

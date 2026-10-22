@@ -1,22 +1,17 @@
-Oche Club Preview 1.0.2 — Android installation and saving checks for personal testing.
+Oche Club Preview 1.0.3 — English and Danish, with durable offline game saving.
 
-Downloads:
+- **OcheClub-1.0.3-preview.apk**: signed Android Preview for Android 8.0+ with an updated Android System WebView.
+- **OcheClub-web.zip**: installable web app after HTTPS hosting, including iPhone Add to Home Screen. No native iPhone IPA is included.
+- **BUILD_INFO.json / SHA256SUMS.txt**: public build identity, signing-certificate fingerprint and checksums. No private key is included.
 
-- **OcheClub-1.0.2-preview.apk** — signed Android Preview APK, Android 8.0+ with an up-to-date Android System WebView.
-- **OcheClub-web.zip** — web installation after HTTPS hosting; supports Android and iPhone browser home-screen installation. No native iPhone IPA is included.
-- **BUILD_INFO.json** — public package identity, signing-certificate fingerprint and source hashes. Contains no private signing key.
-- **SHA256SUMS.txt** — download checksums.
+English is the default. Danish follows the device’s preferred language; Android 13+ also supports the system per-app language setting. Controls, all 12 rulebooks, examples, checkout guidance, calculator, errors, privacy text and Android dialogs are localized. Names and games are preserved when language changes.
 
-Install this new **Oche Club Preview** package. Its ID is `dk.pigeonarmy.ocheclub.preview`, so it installs alongside the earlier `dk.pigeonarmy.ocheclub` test app and does not require deleting that app or its saved games. Games saved in the old app remain in that app and are not automatically copied to Preview.
+The Preview ID is `dk.pigeonarmy.ocheclub.preview` (versionCode 4). It can be installed alongside the original `dk.pigeonarmy.ocheclub` alpha without deleting that app or its data. Earlier Preview versions can update in place using the same preserved Preview signing key.
 
-The earlier alpha offered two APKs with the same app ID but different signing certificates. Android rejects one as an update over the other. This release publishes the exact versioned APK from the repository, without rebuilding or re-signing it during publication. Snapshot verification rejects a changed signing certificate or stale source assets. The private Preview key stays outside Git; the publisher must preserve it securely for compatible Preview updates.
+Android game updates use acknowledged private disk saves, including deletion and migration from older Preview WebView data. Browser games use localStorage. No network permission or remote service was added.
 
-The release workflow installs and reinstalls the exact download in isolated accelerated Android 15 and 16 emulators and checks real WebView gameplay before publishing. Check the associated GitHub Actions result for current validation. Real-phone testing is still required; this is a development preview, not a commercially signed Play Store release.
+Publication requires checks of the exact immutable download on Android 15 and 16: install, same-key reinstall, real scoring, undo, numeric totals, abrupt process stop/reopen and English/Danish app language, including a Danish native dialog. The workflow publishes those tested bytes without rebuilding or re-signing. The publisher must preserve the private Preview key outside Git.
 
-If Android still refuses installation, note the exact error and the phone model/Android version. The generic "App not installed" screen can also have causes unrelated to signing. Do not delete an older app merely to try this separate Preview package.
+The Samsung S24+ user’s original fresh-install rejection has not been reproduced. They confirmed no earlier installation and Auto Blocker off; neither is assumed as the cause. If this APK is also rejected, an Android package-installer error code or device log is needed for a precise diagnosis.
 
-Includes 12 game modes, alternative X01 finishes, beginner info rulebooks, dartboard calculator, numeric totals, Bust, undo and local saving. Final branding, commercial signing, Play Store publication and native iPhone work remain separate.
-
-Version 1.0.2 stores Android games through two fixed-purpose native storage methods with acknowledged disk commits. Existing Preview localStorage games migrate once; deletion prevents older game data from returning. Browser storage stays localStorage. No network permissions or external service were added.
-
-The reported Samsung S24+ fresh-install rejection remains unconfirmed: the user had no prior installation, so a signature conflict does not explain their screenshot. Samsung file-install policies require a real-device retry/check.
+This is a development preview. Final artwork, commercial signing, store submission, broader real-device testing and the later native iPhone app remain separate milestones.

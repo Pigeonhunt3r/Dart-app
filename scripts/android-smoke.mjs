@@ -124,6 +124,28 @@ try{
  // Kill/relaunch the native process, not only the document, and verify persisted state.
  console.log('Native dartboard, undo and numeric score passed.');
  stage='process-death persistence';closeWebView();android('shell','am','force-stop',packageName);launch();await connectWebView();await activeScore(401);
+ if(Number(badging.match(/versionCode='(\d+)'/)?.[1])>=4){
+  stage='Danish Android app language';
+  closeWebView();android('shell','am','force-stop',packageName);
+  android('shell','cmd','locale','set-app-locales',packageName,'--user','0','--locales','da');
+  launch();await connectWebView();await activeScore(401);
+  assert.equal(await cdp.evaluate('document.documentElement.lang'),'da');
+  assert.match(await cdp.evaluate('document.querySelector("#rules").textContent'),/Spilleregler/);
+  assert.match(await cdp.evaluate('window.OcheLocale.language()'),/^da/);
+  // Check a real Android resource dialog as well as the translated WebView.
+  android('shell','input','keyevent','4');
+  await until(()=>{
+   android('shell','uiautomator','dump','/data/local/tmp/oche-window.xml');
+   return android('shell','cat','/data/local/tmp/oche-window.xml').includes('Luk Oche Club?');
+  },'Danish native exit dialog did not appear.');
+  android('shell','input','keyevent','4');
+  stage='English Android app language';
+  closeWebView();android('shell','am','force-stop',packageName);
+  android('shell','cmd','locale','set-app-locales',packageName,'--user','0','--locales','en');
+  launch();await connectWebView();await activeScore(401);
+  assert.equal(await cdp.evaluate('document.documentElement.lang'),'en');
+  assert.match(await cdp.evaluate('document.querySelector("#rules").textContent'),/Rules/);
+ }
  const activities=android('shell','dumpsys','activity','activities');
  assert.ok(activities.split('\n').some(line=>/ResumedActivity/.test(line)&&line.includes(packageName)),'App is not the resumed Android activity.');
  const crashes=android('logcat','-d','-b','crash');
@@ -131,7 +153,7 @@ try{
  assert.ok(!crashes.includes(packageName),'Android recorded an app crash. See artifacts/android-crash-log.txt.');
  const screenshot=execFileSync(adb,['-s',serial,'exec-out','screencap','-p'],{timeout:15000,maxBuffer:8*1024*1024});
  await writeFile(`${reportPrefix}-native.png`,screenshot);
- if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`\nAndroid API ${api}: exact APK installation, same-key reinstall, real scoring and process-death persistence passed.\n`);
+ if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`\nAndroid API ${api}: exact APK installation, same-key reinstall, real scoring and process-death persistence passed. For versionCode 4+, English/Danish Android app language and Danish native dialog also passed.\n`);
  console.log('Native Android smoke passed: install, same-key reinstall, launch, 12-game UI, dartboard Done, undo, numeric score and process-death persistence.');
 }catch(error){
  let web;

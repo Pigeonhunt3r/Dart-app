@@ -5,12 +5,33 @@
 - Name: **Oche Club** (chosen working name; publisher must check store/trademark availability).
 - Package/application ID: `dk.pigeonarmy.ocheclub`. Confirm before the first Play upload; the ID cannot subsequently be changed for that listing.
 - Model: one-time paid download, no ads, subscriptions or in-app purchases. Set the price in Play Console; no billing integration is required for an upfront paid listing. Choose paid before launch: Google Play does not allow a published free app to become paid under the same listing.
-- Primary language: Danish. Game category: Sports (confirm against the actual Console choices).
+- Primary language: English, with Danish localization selected from system settings. Game category: Sports (confirm against the actual Console choices).
 - Minimum Android: 8.0 / API 26; an up-to-date Android System WebView is required.
 - Compile/target SDK: 36. Check the current Play target API deadline again at submission.
 - Android App Bundle (AAB) for Play. Debug APK is only for local testing, not sale.
 - No Internet, advertising ID, contacts, location, storage or other runtime permissions.
 - No third-party analytics/ads SDKs. No native `.so` libraries; still run Play's compatibility checks, including current 16 KB page-size requirements.
+
+## English listing draft
+
+**Short description**
+
+Your darts partner: 12 game variants, live checkouts and scores for everyone.
+
+**Full description**
+
+Make darts night simple with Oche Club. Pick a game, enter the players and let the app keep score and track turns.
+
+• 301, 501, 701 and 1001 with double-out or straight-out.
+• Several live checkout routes show singles, triples, doubles and bull finishes for your remaining darts.
+• Cricket, Cut-throat Cricket, Around the World, Around the Doubles, Shanghai, Halve-it, Count Up, Baseball, Killer, Elimination and Golf.
+• 1–8 players sharing one device; some games require at least two.
+• Tap the dartboard to record hits, then Done; or enter a full X01 turn using the number pad. Bust cancels the turn.
+• Beginner rulebooks behind each game’s info button, undo and automatic local saving.
+• English by default, Danish when selected by device settings.
+• Offline play. No ads, accounts, subscriptions or in-app purchases.
+
+Local rules vary. The in-app guide describes the supported variants. No online multiplayer or cross-device sync.
 
 ## Danish listing draft
 
