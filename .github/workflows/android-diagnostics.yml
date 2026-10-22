@@ -12,7 +12,7 @@ jobs:
       matrix:
         api: [35, 36]
     env:
-      APK_PATH: downloads/v1.0.4-alpha.1/OcheClub-1.0.4-preview.apk
+      APK_PATH: downloads/v1.0.5-alpha.1/OcheClub-1.0.5-preview.apk
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: '24'
       - name: Verify snapshot checksums
-        working-directory: downloads/v1.0.4-alpha.1
+        working-directory: downloads/v1.0.5-alpha.1
         run: sha256sum --check SHA256SUMS.txt
       - name: Install Android build tools
         run: "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager 'build-tools;35.0.0'"

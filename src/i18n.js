@@ -1,5 +1,17 @@
 // English is the fallback. Danish follows the device’s preferred language.
 export const DANISH=Object.freeze({
+  "Enter a name for every player (at least one non-space character).": "Skriv et navn til hver spiller (mindst ét tegn, der ikke er mellemrum).",
+  "Player names must be 24 characters or fewer.": "Spillernavne må højst være 24 tegn.",
+  "Enter at least one non-space character.": "Skriv mindst ét tegn, der ikke er mellemrum.",
+  "Your players are ready. You can edit their names before starting.": "Spillerne er klar. I kan ændre navnene, før spillet starter.",
+  "This mode needs at least two players. Add another player to continue.": "Dette spil kræver mindst to spillere. Tilføj en spiller for at fortsætte.",
+  "Rematch": "Spil igen",
+  "Another mode with the same players": "Andet spil med samme spillere",
+  "End session": "Afslut spilleaften",
+  "Same players. Next game.": "Samme spillere. Nyt spil.",
+  "Choose another mode for this group.": "Vælg næste spil til holdet.",
+  "Back to results": "Tilbage til resultatet",
+
   "Your change could not be saved. Please try again.": "Din ændring kunne ikke gemmes. Prøv igen.",
   "You can undo the last 200 actions.": "Du kan fortryde de seneste 200 handlinger.",
   "Oche Club · One more throw": "Oche Club · Ét kast mere",

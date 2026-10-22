@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
 const base=process.env.TEST_BASE_URL||'http://127.0.0.1:3000';
 const page=await browser.newPage({locale:'en-GB',viewport:{width:390,height:844}});
+async function startGame(){
+ const fields=page.locator('[name=player]');
+ for(let i=0;i<await fields.count();i++)if(!(await fields.nth(i).inputValue()).trim())await fields.nth(i).fill(`Player ${i+1}`);
+ await page.locator('.start-button').click();
+}
 const errors=[];page.on('pageerror',error=>errors.push(error.message));
 await page.goto(base);await page.locator('.game-card').first().waitFor();
 assert.equal(await page.locator('html').getAttribute('lang'),'en');
@@ -18,7 +23,7 @@ for(const id of ['x01','cricket','cutthroat','around','clock','shanghai','halve'
 }
 await page.locator('[data-mode=x01]').click();
 await page.locator('[name=player]').first().fill('Spilleregler <Anna>');
-await page.locator('.start-button').click();
+await startGame();
 assert.match(await page.locator('.active-player').innerText(),/Spilleregler <Anna>/);
 await page.locator('#calculator').click();await page.locator('#total-tab').click();
 for(const digit of [1,0,0])await page.locator(`[data-digit="${digit}"]`).click();
@@ -29,7 +34,7 @@ assert.match(await page.locator('.active-player').innerText(),/Spilleregler <Ann
 await page.locator('#undo').click();assert.equal(await page.locator('.active-player > strong').innerText(),'501');
 await page.locator('#about').click();assert.match(await page.locator('dialog').innerText(),/No ads, accounts/);
 page.once('dialog',dialog=>dialog.accept());await page.locator('#clear-data').click();
-await page.locator('[data-mode=x01]').click();await page.locator('#start').selectOption('301');await page.locator('.start-button').click();
+await page.locator('[data-mode=x01]').click();await page.locator('#start').selectOption('301');await startGame();
 await page.locator('[data-mult="3"]').click();for(let i=0;i<3;i++)await page.locator('[data-hit="20"]').click();
 await page.locator('#next').click();await page.locator('[data-special=miss]').click();await page.locator('#next').click();
 assert.match(await page.locator('.checkout').innerText(),/CHECKOUT OPTIONS/);

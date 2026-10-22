@@ -63,3 +63,16 @@ test('explicit bust restores current visit including elimination victims',()=>{
  let s=g('x01');s=dart(s,20,3);s=bustTurn(s);assert.equal(s.players[0].score,501);assert.equal(s.darts.length,3);
  s=g('elimination');s.players[0].score=80;s.players[1].score=100;s=dart(s,20);assert.equal(s.players[1].score,0);s=bustTurn(s);assert.equal(s.players[0].score,80);assert.equal(s.players[1].score,100);
 });
+
+
+test('every game requires a nonblank player name instead of generating a default',()=>{
+ for(const {id} of MODES){
+  for(const invalid of ['', ' ', '\t\n', null, undefined, 7]){
+   assert.throws(()=>createGame(id,['A',invalid]),`Mode ${id} accepted an invalid name: ${JSON.stringify(invalid)}`);
+  }
+  assert.throws(()=>createGame(id,['A','x'.repeat(25)]),`Mode ${id} accepted an overlong name`);
+  for(const names of [Array(2),['A',,]])assert.throws(()=>createGame(id,names),`Mode ${id} accepted missing sparse-array names`);
+  const game=createGame(id,[' A ','<B>']);
+  assert.deepEqual(game.players.map(player=>player.name),['A','<B>']);
+ }
+});

@@ -1,18 +1,18 @@
 # Oche Club — Privacy policy
 
-Effective date: 22 October 2026 · App version: 1.0.4
+Effective date: 22 October 2026 · App version: 1.0.5
 
 Oche Club is an offline darts scorekeeping application. The application does not collect or transmit personal data to its publisher or third parties. It contains no advertising, analytics, account system, cloud synchronization, subscriptions or in-app purchases.
 
 ## Information on your device
 
-Player names you enter, your current match and undo history are stored locally in the application's private WebView storage. This enables resuming a match after closing the app. Other apps cannot normally access this private storage. Do not enter sensitive information as a player name.
+Player names you enter, your current match and undo history are stored locally in the Android application's private storage, or the browser's local storage for the web version. This enables resuming a match after closing the app. Other apps cannot normally access this private storage. Do not enter sensitive information as a player name.
 
 No app server receives this information. The Android application has no Internet permission. Fonts, rules and game logic are bundled with the application. Android backup is disabled for the application.
 
 ## Delete your information
 
-In the app, open **Om appen** and choose **Slet gemt spil og spillernavne**. You may also clear the app's storage in Android settings or uninstall the application. Deletion is permanent. There is no account or remote record to delete.
+In the app, open **About → Delete saved game and player names** (Danish: **Om appen → Slet gemt spil og spillernavne**). After a completed game, **End session** also clears the saved game, player names and undo history. Choosing another mode with the same players retains the completed result until the next game starts successfully. If a storage error is shown, the change has not completed and can be retried. You may also clear the app's storage in Android settings or uninstall the application. Deletion is permanent. There is no account or remote record to delete.
 
 ## Payments
 

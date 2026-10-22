@@ -110,7 +110,17 @@ try{
  stage='launch';android('logcat','-c');launch();await connectWebView();
  await until(()=>cdp.evaluate("document.querySelectorAll('.game-card').length===12"),'Android WebView did not render the 12 game cards.');
  if(durableStorage)assert.equal(await cdp.evaluate("typeof window.OcheGameStore?.load"),'function','Android durable game store is missing.');
- stage='dartboard score';await click('[data-mode="x01"]');await click('.start-button');await activeScore(501);
+ stage='player names';await click('[data-mode="x01"]');
+ // Type names through renderer input, as fresh games no longer have defaults.
+ for(let i=0;i<2;i++){
+  await click(`#players label:nth-child(${i+1}) input`);
+  await cdp.call('Input.dispatchKeyEvent',{type:'keyDown',key:'a',code:'KeyA',windowsVirtualKeyCode:65,modifiers:2});
+  await cdp.call('Input.dispatchKeyEvent',{type:'keyUp',key:'a',code:'KeyA',windowsVirtualKeyCode:65,modifiers:2});
+  await cdp.call('Input.insertText',{text:`Player ${i+1}`});
+ }
+ assert.deepEqual(await cdp.evaluate("[...document.querySelectorAll('[name=player]')].map(input=>input.value)"),['Player 1','Player 2']);
+ await cdp.evaluate('document.activeElement.blur()');
+ stage='dartboard score';await click('.start-button');await activeScore(501);
  await click('#calculator');
  await click('[data-board-n="20"][data-board-m="3"]');await click('#calculator-done');await activeScore(441);
  await click('#undo');await activeScore(501);
@@ -146,6 +156,37 @@ try{
   assert.equal(await cdp.evaluate('document.documentElement.lang'),'en');
   assert.match(await cdp.evaluate('document.querySelector("#rules").textContent'),/Rules/);
  }
+ if(Number(badging.match(/versionCode='(\d+)'/)?.[1])>=6){
+  stage='finished game session';
+  // Complete the real 401 game: two 180 visits, then single 1 and double 20.
+  async function passOpponent(){await click('#next');await click('[data-special="miss"]');await click('#next');}
+  async function totalVisit(total){
+   await click('#calculator');await click('#total-tab');
+   for(const digit of String(total))await click(`[data-digit="${digit}"]`);
+   await click('#calculator-done');
+  }
+  for(const total of [180,180]){await passOpponent();await totalVisit(total);}
+  await activeScore(41);await passOpponent();
+  await click('[data-mult="1"]');await click('[data-hit="1"]');await click('[data-mult="2"]');await click('[data-hit="20"]');
+  await until(()=>cdp.evaluate("Boolean(document.querySelector('.winner #rematch')&&document.querySelector('#another-mode')&&document.querySelector('#end-session'))"),'Completed game did not offer all three session choices.');
+  await click('#another-mode');await click('[data-mode="shanghai"]');
+  const roster=()=>cdp.evaluate("[...document.querySelectorAll('[name=player]')].map(input=>input.value)");
+  assert.deepEqual(await roster(),['Player 1','Player 2'],'Next mode must carry the named roster.');
+  await click('.start-button');await activeScore(0);
+  async function winShanghai(){
+   for(const multiplier of [1,2,3]){await click(`[data-mult="${multiplier}"]`);await click('[data-hit="1"]');}
+   await until(()=>cdp.evaluate("Boolean(document.querySelector('.winner'))"),'Shanghai did not finish naturally.');
+  }
+  await winShanghai();await click('#rematch');await activeScore(0);
+  assert.equal(await cdp.evaluate("document.querySelector('[data-mult=\"1\"]').getAttribute('aria-pressed')"),'true','Rematch must reset dart input to Single.');
+  assert.equal(await cdp.evaluate("document.querySelector('#undo').disabled"),true,'Rematch must clear undo history.');
+  await winShanghai();await click('#end-session');
+  assert.equal(await cdp.evaluate("document.querySelectorAll('.game-card').length"),12);
+  assert.equal(await cdp.evaluate('window.OcheGameStore.load()'),'','End session must delete the saved roster and result.');
+  await click('[data-mode="x01"]');
+  assert.deepEqual(await roster(),['',''],'A new session must require names again.');
+  console.log('Native named-session checks passed: real X01 finish, Shanghai rematch, same roster in another mode and session deletion.');
+ }
  const activities=android('shell','dumpsys','activity','activities');
  assert.ok(activities.split('\n').some(line=>/ResumedActivity/.test(line)&&line.includes(packageName)),'App is not the resumed Android activity.');
  const crashes=android('logcat','-d','-b','crash');
@@ -153,7 +194,7 @@ try{
  assert.ok(!crashes.includes(packageName),'Android recorded an app crash. See artifacts/android-crash-log.txt.');
  const screenshot=execFileSync(adb,['-s',serial,'exec-out','screencap','-p'],{timeout:15000,maxBuffer:8*1024*1024});
  await writeFile(`${reportPrefix}-native.png`,screenshot);
- if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`\nAndroid API ${api}: exact APK installation, same-key reinstall, real scoring and process-death persistence passed. For versionCode 4+, English/Danish Android app language and Danish native dialog also passed.\n`);
+ if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`\nAndroid API ${api}: exact APK installation, same-key reinstall, real scoring and process-death persistence passed. For versionCode 4+, English/Danish Android app language and Danish native dialog also passed. For versionCode 6+, named-player entry, rematch, cross-mode roster reuse and session ending passed.\n`);
  console.log('Native Android smoke passed: install, same-key reinstall, launch, 12-game UI, dartboard Done, undo, numeric score and process-death persistence.');
 }catch(error){
  let web;

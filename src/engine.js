@@ -15,10 +15,13 @@ export const MODES=[
 ];
 export function createGame(mode,names,options={}){
  if(!MODES.some(m=>m.id===mode))throw Error(t("Unknown game"));
- if(names.length<1||names.length>8)throw Error(t("Choose 1–8 players"));
+ if(!Array.isArray(names)||names.length<1||names.length>8)throw Error(t("Choose 1–8 players"));
  if(['killer','elimination','cutthroat'].includes(mode)&&names.length<2)throw Error(t("This game needs at least two players"));
+ const playerNames=Array.from(names,name=>typeof name==='string'?name.trim():'');
+ if(playerNames.some(name=>!name))throw Error(t('Enter a name for every player (at least one non-space character).'));
+ if(playerNames.some(name=>name.length>24))throw Error(t('Player names must be 24 characters or fewer.'));
  const start=[301,501,701,1001].includes(Number(options.start))?Number(options.start):501;
- return {mode,options:{start,doubleOut:options.doubleOut!==false},players:names.map((name,i)=>({name:name.trim()||`${t("Player")} ${i+1}`,score:mode==='x01'?start:mode==='halve'?40:0,marks:{},progress:1,lives:3,killer:false,target:i+1})),active:0,round:1,darts:[],winner:null,message:'',turnStart:null};
+ return {mode,options:{start,doubleOut:options.doubleOut!==false},players:playerNames.map((name,i)=>({name,score:mode==='x01'?start:mode==='halve'?40:0,marks:{},progress:1,lives:3,killer:false,target:i+1})),active:0,round:1,darts:[],winner:null,message:'',turnStart:null};
 }
 export const points=d=>d.n*d.m;
 export function target(g){
