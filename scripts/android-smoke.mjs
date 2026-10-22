@@ -1,5 +1,5 @@
 import {execFileSync} from 'node:child_process';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,writeFile,appendFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
@@ -31,7 +31,7 @@ assert.equal(android('shell','getprop','ro.kernel.qemu').trim(),'1','Device must
 assert.equal(android('shell','getprop','sys.boot_completed').trim(),'1','Emulator must finish booting.');
 await mkdir('artifacts',{recursive:true});
 
-let cdp,port;
+let cdp,port,lastClick;
 class CDP {
  constructor(socket){this.socket=socket;this.next=1;this.pending=new Map();socket.addEventListener('message',event=>{
   const data=JSON.parse(event.data);const item=this.pending.get(data.id);if(!item)return;
@@ -75,8 +75,9 @@ function closeWebView(){
  if(port){try{android('forward','--remove',`tcp:${port}`);}catch{}port=null;}
 }
 async function click(selector){
- const hit=await cdp.evaluate(`(()=>{const element=document.querySelector(${JSON.stringify(selector)});if(!element||element.disabled)return null;element.scrollIntoView({block:'center',inline:'center'});const r=element.getBoundingClientRect();if(!r.width||!r.height)return null;return {x:r.left+r.width/2,y:r.top+r.height/2};})()`);
+ const hit=await cdp.evaluate(`(()=>{const element=document.querySelector(${JSON.stringify(selector)});if(!element||element.disabled)return null;element.scrollIntoView({block:'center',inline:'center'});const r=element.getBoundingClientRect();if(!r.width||!r.height)return null;const x=r.left+r.width/2,y=r.top+r.height/2;const target=document.elementFromPoint(x,y);return {x,y,target:target?.outerHTML.slice(0,350)};})()`);
  assert.ok(hit,`Missing, hidden or disabled app control: ${selector}`);
+ lastClick={selector,...hit};
  // Use real renderer input: SVG dart fields have no HTMLElement.click() method.
  await cdp.call('Input.dispatchMouseEvent',{type:'mousePressed',x:hit.x,y:hit.y,button:'left',clickCount:1});
  await cdp.call('Input.dispatchMouseEvent',{type:'mouseReleased',x:hit.x,y:hit.y,button:'left',clickCount:1});
@@ -122,6 +123,11 @@ try{
  await writeFile('artifacts/android-native.png',screenshot);
  console.log('Native Android smoke passed: install, same-key reinstall, launch, 12-game UI, dartboard Done, undo, numeric score and process-death persistence.');
 }catch(error){
+ let web;
+ if(cdp){try{web=await cdp.evaluate("({url:location.href,cards:document.querySelectorAll('.game-card').length,player:document.querySelector('.active-player')?.innerText,dialog:document.querySelector('dialog[open]')?.innerText,darts:[...document.querySelectorAll('.dart-slot')].map(e=>e.innerText),body:document.body.innerText.slice(0,1800)})");}catch{}}
+ const detail=JSON.stringify({error:error.message,lastClick,web});
+ console.error('::error title=Native Android diagnostic::'+detail.slice(0,5000).replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A'));
+ if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,'\n## Native Android diagnostic\n\n    '+detail.replaceAll('\n','\n    ')+'\n');
  try{await writeFile('artifacts/android-failure-logcat.txt',android('logcat','-d','-t','1000'));}catch{}
  throw error;
 }finally{closeWebView();}
