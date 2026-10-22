@@ -1,6 +1,6 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
-import {throwHit} from './controls.mjs';
+import {throwHit,finishVisit} from './controls.mjs';
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
 const page=await browser.newPage({locale:'en-US'});
 async function startGame(){
@@ -36,10 +36,10 @@ await page.locator('[data-mode=x01]').click();await startGame();
 await fail(true);for(const digit of ['1','0','0'])await page.locator(`[data-score-digit="${digit}"]`).click();
 await page.locator('#score-done').click();assert.equal(await page.locator('.active-player > strong').innerText(),'501');assert.equal(await page.locator('#score-display').innerText(),'100');
 assert.equal(await page.evaluate(()=>JSON.parse(sessionStorage.getItem('native-game')).game.darts.length),0);
-await fail(false);await page.locator('#score-done').click();assert.equal(await page.locator('.active-player > strong').innerText(),'401');
+await fail(false);await page.locator('#score-done').click();assert.equal(await page.locator('.player-row > strong').first().innerText(),'401');assert.match(await page.locator('.active-player').innerText(),/Player 2/);
 await page.locator('#undo').click();await page.locator('#hits-tab').click();
 // Play long enough to exercise bounded history, then undo the last turn.
-await page.evaluate(()=>{for(let i=0;i<120;i++){document.querySelector('[data-special=miss]').click();document.querySelector('#next').click();}});
+await page.evaluate(()=>{for(let i=0;i<120;i++){document.querySelector('[data-special=miss]').click();(document.querySelector('#finish-turn')||document.querySelector('#next')).click();}});
 let stored=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('native-game')));
 assert.equal(stored.game.round,61);assert.equal(stored.history.length,200);
 assert.equal(stored.game.players[0].score,501);assert.equal(stored.game.players[1].score,501);

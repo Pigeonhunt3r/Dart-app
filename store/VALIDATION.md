@@ -2,6 +2,14 @@
 
 This records development checks, not commercial store readiness.
 
+## Preview 1.0.8 turn entry and readability
+
+This revision adds explicit Around Double/Triple buttons, larger scoring text and a darker Miss button. X01 Done commits the score and next player in one saved action; partial calculator visits, exact hits, numeric totals, Bust, undo and failed-save retries share the new flow. Checkout help is capped at three distinct legal routes.
+
+Local validation passed: **67 unit tests**, all **six browser suites**, JavaScript syntax, web export, Android debug/unsigned release APK/AAB builds, and lint (0 errors, 2 existing warnings). Browser fault tests verify that calculator Done keeps the draft on failed save, retries once, persists the next player, and restores score/player with one Undo. Exact-hit Done, numeric totals, Bust, winning checkouts, Around shortcuts and three-route limits pass. English/Danish layouts fit at 320, 390, 412 and 1440px, including 24-character names; Miss text contrast is 8.02:1. The immutable 1.0.8 snapshot verifies its preserved signing certificate and exact bundled source assets.
+
+The exact tagged APK must pass Android 15 and 16 before release publication. Historical checks below describe earlier versions.
+
 ## Preview 1.0.7 scores, guidance and rule variants
 
 This source revision puts every player's score above entry, uses darker slate/gray surfaces, and adds live target/action guidance for all 12 modes. Fresh Around the World games use multiplier skips followed by numbered Double, numbered Triple and Bull. Fresh Cricket/Cut-throat games add separate Double/Triple rows with one-row-per-dart credit. Classic variants remain selectable, and older saved games retain Classic behavior through undo and rematch. Available X01 checkout alternatives now appear beside entry instead of being reduced to a two-route preview.

@@ -23,7 +23,7 @@ export function createGame(mode,names,options={}){
  const start=[301,501,701,1001].includes(Number(options.start))?Number(options.start):501;
  return {mode,options:{start,doubleOut:options.doubleOut!==false,...(mode==='around'?{aroundVariant:options.aroundVariant==='classic'?'classic':'extended'}:{}),...(['cricket','cutthroat'].includes(mode)?{cricketVariant:options.cricketVariant==='classic'?'classic':'extended'}:{})},players:playerNames.map((name,i)=>({name,score:mode==='x01'?start:mode==='halve'?40:0,marks:{},progress:1,lives:3,killer:false,target:i+1})),active:0,round:1,darts:[],winner:null,message:'',turnStart:null};
 }
-export const points=d=>d.n*d.m;
+export const points=d=>d.anyRing?0:d.n*d.m;
 export const isExtendedAround=g=>g.options?.aroundVariant==='extended';
 export const isExtendedCricket=g=>['cricket','cutthroat'].includes(g.mode)&&g.options?.cricketVariant==='extended';
 export const cricketTargets=g=>isExtendedCricket(g)?[20,19,18,17,16,15,'double','triple',25]:[20,19,18,17,16,15,25];
@@ -98,7 +98,26 @@ export function endTurn(state){
  if(next<=g.active){if(limits[g.mode]&&g.round===limits[g.mode]){const scores=g.players.map(q=>q.score),best=g.mode==='golf'?Math.min(...scores):Math.max(...scores);finish(g,scores.map((v,i)=>v===best?i:-1).filter(i=>i>=0));return g;}g.round++;}
  g.active=next;g.darts=[];g.turnStart=null;g.message='';return g;
 }
-export function dartLabel(d){if(d.totalEntry)return 'Total '+d.total;if(d.notThrown||d.bust)return '—';const label=d.n===0?t("Miss"):d.n===25?(d.m===2?'Bullseye':'Bull'):(d.m===3?'T':d.m===2?'D':'')+d.n;return d.category&&d.category!=='number'?label+' · '+targetLabel(d.category):label;}
+/** Confirm one X01 visit, including a partial board entry, as a single saved action. */
+export function completeVisit(state){
+ if(state.mode!=='x01'||state.winner!==null||!state.darts.length)return state;
+ const player=state.players[state.active],before=state.turnStart?.[state.active]?.score??player.score;
+ const bust=state.message?.startsWith('Bust!')||state.darts.some(dart=>dart.bust);
+ let completed=state;
+ while(completed.darts.length<3)completed=throwDart(completed,0,1);
+ const next=endTurn(completed);
+ next.lastVisit={player:state.active,name:player.name,score:player.score,total:before-player.score,bust:Boolean(bust)};
+ return next;
+}
+/** Around only needs the ring at its final Double/Triple stages. */
+export function throwAroundRing(state,m){
+ if(state.mode!=='around'||![2,3].includes(m))throw Error(t('Invalid dart'));
+ const progress=state.players[state.active].progress;
+ const next=throwDart(state,progress<=20?progress:1,m);
+ if(next!==state&&progress>20)next.darts.at(-1).anyRing=m===2?'double':'triple';
+ return next;
+}
+export function dartLabel(d){if(d.totalEntry)return 'Total '+d.total;if(d.notThrown||d.bust)return '—';if(d.anyRing)return targetLabel(d.anyRing);const label=d.n===0?t("Miss"):d.n===25?(d.m===2?'Bullseye':'Bull'):(d.m===3?'T':d.m===2?'D':'')+d.n;return d.category&&d.category!=='number'?label+' · '+targetLabel(d.category):label;}
 // Shortest possible checkout using the darts left in this turn. Bullseye is a double.
 export function checkout(score,dartsLeft=3,doubleOut=true){
  if(!Number.isInteger(score)||score<=0||dartsLeft<1)return null;

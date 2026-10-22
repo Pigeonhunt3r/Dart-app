@@ -12,3 +12,8 @@ export async function enterScore(page,total){
  for(const digit of String(total))await page.locator(`[data-score-digit="${digit}"]`).click();
  await page.locator('#score-done').click();
 }
+
+export async function finishVisit(page){
+ const done=page.locator('#finish-turn');
+ await (await done.count()?done:page.locator('#next')).click();
+}

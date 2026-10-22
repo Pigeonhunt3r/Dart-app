@@ -13,6 +13,7 @@ export function guidance(game){
   detail:t('Choose Rematch to play again with these settings, another mode with the same players, or End session.'),
   action:t('Rematch or another mode')
  };
+ if(left===0&&game.mode==='x01')return {title:game.message?.startsWith('Bust!')?t('Bust — turn cancelled'):t('Turn complete'),target:t('Done'),detail:game.message?.startsWith('Bust!')?t('Scores are back where they were at the start of the turn. Press Done to move to the next player.'):t('Press Done to save this turn and move to the next player.'),action:t('Done')};
  if(left===0){
   const bust=game.message?.startsWith('Bust!')||game.darts.some(dart=>dart.bust);
   let detail=t('All three darts have been recorded. Press Next player to continue.');
@@ -32,7 +33,7 @@ export function guidance(game){
  if(game.mode==='x01'){
   result.target=t('{score} points remaining',{score:player.score});
   result.detail=game.options.doubleOut?t('Reach exactly zero. Your final dart must be a double or Bullseye; going below zero or leaving 1 is Bust.'):t('Reach exactly zero on any field. Going below zero cancels the whole turn.');
-  if(!game.darts.length)result.detail+=' '+t('Enter your turn total, or use Dart hits to record the exact fields.');
+  if(!game.darts.length)result.detail+=' '+t('Enter your turn total, or use Dart hits to record the exact fields.')+' '+t('Done saves the turn and moves to the next player.');
  }else if(['cricket','cutthroat'].includes(game.mode)){
   const targets=cricketTargets(game),next=targets.find(value=>(player.marks[value]||0)<3);
   if(next!==undefined){

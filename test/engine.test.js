@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,throwDart,endTurn,checkout,checkoutOptions,recordTotal,bustTurn,points,MODES,target} from '../src/engine.js';
+import {createGame,throwDart,endTurn,completeVisit,throwAroundRing,dartLabel,checkout,checkoutOptions,recordTotal,bustTurn,points,MODES,target} from '../src/engine.js';
 const g=(mode,opts)=>createGame(mode,['Anna','Bo'],opts);
 const dart=(s,n,m=1)=>throwDart(s,n,m);
 const turn=(s,ds)=>endTurn(ds.reduce((s,[n,m])=>dart(s,n,m),s));
@@ -156,4 +156,41 @@ test('legacy Cricket saves still win with the original seven targets',()=>{
  const legacy=g('cricket',{cricketVariant:'classic'});delete legacy.options.cricketVariant;
  legacy.players[0].marks=Object.fromEntries([20,19,18,17,16,15].map(n=>[n,3]));legacy.players[0].marks[25]=2;
  assert.deepEqual(dart(legacy,25).winner,[0]);
+});
+
+
+test('Done commits a full X01 total and advances once without changing the source',()=>{
+ const before=g('x01'),recorded=recordTotal(before,100),snapshot=structuredClone(recorded),next=completeVisit(recorded);
+ assert.equal(next.active,1);assert.equal(next.players[0].score,401);assert.equal(next.players[1].score,501);
+ assert.equal(next.darts.length,0);assert.equal(next.turnStart,null);assert.equal(next.round,1);
+ assert.deepEqual(next.lastVisit,{player:0,name:'Anna',score:401,total:100,bust:false});assert.deepEqual(recorded,snapshot);
+ assert.equal(completeVisit(next),next,'A repeated confirmation must not skip another player');
+});
+test('Done completes partial X01 hits and solo turns without counting extra points',()=>{
+ const recorded=throwDart(g('x01'),20,3),next=completeVisit(recorded);
+ assert.equal(next.players[0].score,441);assert.equal(next.active,1);assert.equal(next.lastVisit.total,60);
+ const solo=completeVisit(throwDart(createGame('x01',['A']),25));
+ assert.equal(solo.active,0);assert.equal(solo.round,2);assert.equal(solo.players[0].score,476);assert.equal(solo.darts.length,0);
+});
+test('Done advances after a Bust and retains the restored score and result',()=>{
+ let before=g('x01');before.players[0].score=40;
+ const next=completeVisit(throwDart(throwDart(before,20),20,2));
+ assert.equal(next.active,1);assert.equal(next.players[0].score,40);assert.equal(next.lastVisit.bust,true);assert.equal(next.lastVisit.total,0);
+ const explicit=completeVisit(bustTurn(throwDart(g('x01'),20,3)));
+ assert.equal(explicit.players[0].score,501);assert.equal(explicit.active,1);assert.equal(explicit.lastVisit.bust,true);
+});
+test('Done leaves winning X01 results and other game turns in place',()=>{
+ const before=g('x01');before.players[0].score=40;const won=throwDart(before,20,2);
+ assert.equal(completeVisit(won),won);assert.equal(won.active,0);assert.deepEqual(won.winner,[0]);
+ for(const mode of ['countup','cricket','around']){const other=throwDart(g(mode),20);assert.equal(completeVisit(other),other);}
+});
+test('Around ring shortcuts use the current number and preserve final-stage labels',()=>{
+ let state=g('around'),before=structuredClone(state);
+ state=throwAroundRing(state,3);assert.equal(state.players[0].progress,4);assert.equal(dartLabel(state.darts[0]),'T1');assert.deepEqual(before,g('around'));
+ state=throwAroundRing(state,2);assert.equal(state.players[0].progress,6);assert.equal(dartLabel(state.darts[1]),'D4');
+ state.players[0].progress=21;state=endTurn(state);state.active=0;
+ state=throwAroundRing(state,2);assert.equal(state.players[0].progress,22);assert.equal(dartLabel(state.darts[0]),'Double');assert.equal(points(state.darts[0]),0);
+ state=throwAroundRing(state,3);assert.equal(state.players[0].progress,23);assert.equal(dartLabel(state.darts[1]),'Triple');
+ assert.equal(state.winner,null);state=throwDart(state,25);assert.deepEqual(state.winner,[0]);
+ assert.throws(()=>throwAroundRing(g('x01'),2));assert.throws(()=>throwAroundRing(g('around'),1));
 });

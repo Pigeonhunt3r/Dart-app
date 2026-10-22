@@ -1,5 +1,16 @@
 // English is the fallback. Danish follows the device’s preferred language.
 export const DANISH=Object.freeze({
+  "Press Done to finish this turn, or use Dart hits for remaining darts.": "Tryk Færdig for at afslutte turen, eller brug Piletræffere til de resterende pile.",
+  "{player}: Bust. The turn was cancelled.": "{player}: Bust. Turen blev annulleret.",
+  "{player} scored {points}. {remaining} remaining.": "{player} scorede {points}. {remaining} tilbage.",
+  "Current number": "Aktuelt tal",
+  "Any numbered hit": "Valgfrit nummereret felt",
+  "Use Double or Triple for your current number, or for the matching final target.": "Brug Double eller Triple på dit aktuelle tal eller på det tilsvarende afsluttende mål.",
+  "Press Done to save this turn and move to the next player.": "Tryk Færdig for at gemme turen og gå videre til næste spiller.",
+  "Scores are back where they were at the start of the turn. Press Done to move to the next player.": "Pointene er tilbage som ved turens start. Tryk Færdig for at gå videre til næste spiller.",
+  "Done saves the turn and moves to the next player.": "Færdig gemmer turen og går videre til næste spiller.",
+  "Your turn is over. Press Done to continue.": "Din tur er slut. Tryk Færdig for at fortsætte.",
+
   "Next up": "Næste mål",
   "Target": "Mål",
   "Extended rules": "Udvidede regler",

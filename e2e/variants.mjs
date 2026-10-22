@@ -1,6 +1,6 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
-import {throwHit} from './controls.mjs';
+import {throwHit,finishVisit} from './controls.mjs';
 
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
 const page=await browser.newPage({locale:'en-US',viewport:{width:390,height:844}});
@@ -14,10 +14,10 @@ async function solo(mode,variant='extended'){
  if(['around','cricket'].includes(mode))await page.locator(`#${mode}-variant`).selectOption(variant);
  await page.locator('#remove-player').click();await page.locator('[name=player]').fill('A');await page.locator('.start-button').click();
 }
-async function visit(n,m=1){await throwHit(page,n,m);if((await state()).winner===null)await page.locator('#next').click();}
+async function visit(n,m=1){await throwHit(page,n,m);if((await state()).winner===null)await finishVisit(page);}
 async function categoryVisit(category,n){
  await page.locator(`[data-hit=${category}]`).click();await page.locator('#category-number').selectOption(String(n));await page.locator('#add-dart').click();
- if((await state()).winner===null)await page.locator('#next').click();
+ if((await state()).winner===null)await finishVisit(page);
 }
 async function leave(){await page.locator('#leave').click();await page.locator('.game-card').first().waitFor();}
 
@@ -28,11 +28,17 @@ for(let i=0;i<3;i++)await page.locator('[data-hit="1"]').click();
 assert.equal((await state()).players[0].progress,1);await page.locator('#add-dart').click();
 assert.equal((await state()).players[0].progress,4);assert.match(await page.locator('#turn-guide .guide-target').innerText(),/\b4\b/);
 await page.locator('#undo').click();assert.equal((await state()).players[0].progress,1);
-for(const[n,m]of [[1,3],[4,2],[6,3],[9,3],[12,3],[15,3],[18,3]])await visit(n,m);
+await page.locator('[data-hit=double]').click();await page.locator('[data-hit="1"]').click();assert.equal(await page.locator('#pending-dart').innerText(),'1','A number starts at single after a ring shortcut');
+await page.locator('[data-hit=triple]').click();assert.match(await page.locator('#pending-dart').innerText(),/^T1$/);await page.locator('#add-dart').click();await finishVisit(page);
+await page.locator('[data-hit=double]').click();assert.match(await page.locator('#pending-dart').innerText(),/^D4$/);await page.locator('#add-dart').click();await finishVisit(page);
+for(const[n,m]of [[6,3],[9,3],[12,3],[15,3],[18,3]])await visit(n,m);
 assert.equal((await state()).players[0].progress,21);assert.match(await page.locator('#turn-guide').innerText(),/Double/i);
 await visit(25,2);assert.equal((await state()).players[0].progress,21,'Bullseye must not bypass the separate numbered Double stage');
-await visit(20,2);assert.equal((await state()).players[0].progress,22);assert.match(await page.locator('#turn-guide').innerText(),/Triple/i);
-await visit(20,3);assert.equal((await state()).players[0].progress,23);assert.match(await page.locator('#turn-guide').innerText(),/Bull/i);
+assert.equal(await page.locator('[data-hit=triple]').isDisabled(),true);
+await page.locator('[data-hit=double]').click();assert.match(await page.locator('#pending-dart').innerText(),/^Double$/);await page.locator('#add-dart').click();await finishVisit(page);assert.equal((await state()).players[0].progress,22);assert.match(await page.locator('#turn-guide').innerText(),/Triple/i);
+assert.equal(await page.locator('[data-hit=double]').isDisabled(),true);
+await page.locator('[data-hit=triple]').click();assert.match(await page.locator('#pending-dart').innerText(),/^Triple$/);await page.locator('#add-dart').click();await finishVisit(page);assert.equal((await state()).players[0].progress,23);
+assert.equal(await page.locator('[data-hit=double]').isDisabled(),true);assert.equal(await page.locator('[data-hit=triple]').isDisabled(),true);assert.match(await page.locator('#turn-guide').innerText(),/Bull/i);
 await visit(25);await page.locator('.winner').waitFor();assert.deepEqual((await state()).winner,[0]);
 await page.locator('#rematch').click();assert.equal((await state()).options.aroundVariant,'extended');assert.equal((await state()).players[0].progress,1);await leave();
 

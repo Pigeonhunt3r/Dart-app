@@ -1,6 +1,6 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
-import {throwHit} from './controls.mjs';
+import {throwHit,finishVisit} from './controls.mjs';
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
 const base=process.env.TEST_BASE_URL||'http://127.0.0.1:3000';
 const page=await browser.newPage({locale:'en-GB',viewport:{width:390,height:844}});
@@ -22,7 +22,7 @@ for(const id of ['x01','cricket','cutthroat','around','clock','shanghai','halve'
  assert.doesNotMatch(await page.locator('dialog').innerText(),/[æøåÆØÅ]/);
  await page.locator('#close-rules').click();
 }
-await page.locator('[data-mode=x01]').click();
+await page.locator('[data-mode=x01]').click();await page.locator('#remove-player').click();
 await page.locator('[name=player]').first().fill('Spilleregler <Anna>');
 await startGame();
 assert.match(await page.locator('.active-player').innerText(),/Spilleregler <Anna>/);
@@ -49,7 +49,7 @@ await page.locator('#about').click();assert.match(await page.locator('dialog').i
 page.once('dialog',dialog=>dialog.accept());await page.locator('#clear-data').click();
 await page.locator('[data-mode=x01]').click();await page.locator('#start').selectOption('301');await startGame();
 for(let i=0;i<3;i++)await throwHit(page,20,3);
-await page.locator('#next').click();await page.locator('[data-special=miss]').click();await page.locator('#next').click();
+await finishVisit(page);await page.locator('[data-special=miss]').click();await finishVisit(page);
 assert.match(await page.locator('.checkout').innerText(),/CHECKOUT OPTIONS/);
 assert.match(await page.locator('.checkout').innerText(),/Triple/);assert.match(await page.locator('.checkout').innerText(),/Double/);
 await throwHit(page,20,3);await throwHit(page,15,3);await throwHit(page,8,2);

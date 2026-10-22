@@ -26,7 +26,7 @@ async function until(check,message,timeout=45000){
 const badging=run(aapt,['dump','badging',apk]);
 const packageName=badging.match(/^package: name='([^']+)'/m)?.[1];
 const versionCode=Number(badging.match(/versionCode='(\d+)'/)?.[1]);
-const durableStorage=versionCode>=3,tapInput=versionCode>=7,guidedVariants=versionCode>=8;
+const durableStorage=versionCode>=3,tapInput=versionCode>=7,guidedVariants=versionCode>=8,autoVisit=versionCode>=9;
 const activity=badging.match(/^launchable-activity: name='([^']+)'/m)?.[1];
 assert.ok(packageName&&activity,'APK must declare a launchable activity.');
 assert.equal(android('shell','getprop','ro.kernel.qemu').trim(),'1','Device must be an emulator.');
@@ -89,6 +89,12 @@ async function click(selector){
 
 async function activeScore(score){
  await until(()=>cdp.evaluate(`document.querySelector('.active-player > strong')?.textContent.trim()===${JSON.stringify(String(score))}`),`Active score did not become ${score}.`);
+}
+async function recordedScore(score){
+ if(!autoVisit)return activeScore(score);
+ await until(()=>cdp.evaluate(`(()=>{const saved=JSON.parse(window.OcheGameStore.load()),rows=document.querySelectorAll('.player-row');return saved.game.players[0].score===${score}&&saved.game.active===1&&saved.game.darts.length===0&&rows[0]?.querySelector('strong')?.textContent.trim()===${JSON.stringify(String(score))}&&rows[1]?.classList.contains('active-player');})()`),`Done must save Player 1's score ${score} and advance exactly once to Player 2.`);
+ await activeScore(501);
+ assert.equal(await cdp.evaluate("document.querySelectorAll('#next').length"),0,'X01 Done must not require a second Next player action.');
 }
 async function hitDart(n,m=1){
  if(!tapInput){await click(`[data-mult="${m}"]`);await click(`[data-hit="${n}"]`);return;}
@@ -155,8 +161,10 @@ try{
   assert.ok((await cdp.evaluate("document.querySelector('#turn-guide')?.textContent||''")).trim(),'The match must explain the next action.');
  }
  await click('#calculator');
- await click('[data-board-n="20"][data-board-m="3"]');await click('#calculator-done');await activeScore(441);
+ await click('[data-board-n="20"][data-board-m="3"]');await click('#calculator-done');await recordedScore(441);
+ if(autoVisit)assert.equal(await cdp.evaluate('JSON.parse(window.OcheGameStore.load()).history.length'),1,'Calculator Done must save the partial visit and advance in one undo action.');
  await click('#undo');await activeScore(501);
+ if(autoVisit)assert.equal(await cdp.evaluate('JSON.parse(window.OcheGameStore.load()).game.active'),0,'One undo must restore Player 1 as well as the score.');
  if(tapInput){
   stage='tap-to-cycle exact dart';
   assert.equal(await cdp.evaluate("document.querySelectorAll('#calculator svg').length"),1,'The calculator launcher must show a dartboard icon.');
@@ -174,19 +182,19 @@ try{
   await click('#score-tab');
   assert.equal(await cdp.evaluate("document.querySelectorAll('[data-score-digit]').length"),12,'The regular number pad must be visible in the match.');
  }
- stage='numeric score';await totalVisit(100);await activeScore(401);
+ stage='numeric score';await totalVisit(100);await recordedScore(401);
  if(await cdp.evaluate("typeof window.OcheGameStore?.load==='function'")){
   const persisted=await cdp.evaluate('JSON.parse(window.OcheGameStore.load())');
-  assert.equal(persisted.game.players[persisted.game.active].score,401,'Numeric score must be committed before it is shown.');
+  assert.equal(persisted.game.players[autoVisit?0:persisted.game.active].score,401,'Numeric score must be committed before it is shown.');
  }
  // Kill/relaunch the native process, not only the document, and verify persisted state.
  console.log('Native dartboard, undo and numeric score passed.');
- stage='process-death persistence';closeWebView();android('shell','am','force-stop',packageName);launch();await connectWebView();await activeScore(401);
+ stage='process-death persistence';closeWebView();android('shell','am','force-stop',packageName);launch();await connectWebView();await recordedScore(401);
  if(Number(badging.match(/versionCode='(\d+)'/)?.[1])>=4){
   stage='Danish Android app language';
   closeWebView();android('shell','am','force-stop',packageName);
   android('shell','cmd','locale','set-app-locales',packageName,'--user','0','--locales','da');
-  launch();await connectWebView();await activeScore(401);
+  launch();await connectWebView();await recordedScore(401);
   assert.equal(await cdp.evaluate('document.documentElement.lang'),'da');
   assert.match(await cdp.evaluate('document.querySelector("#rules").textContent'),/Spilleregler/);
   assert.match(await cdp.evaluate('window.OcheLocale.language()'),/^da/);
@@ -200,7 +208,7 @@ try{
   stage='English Android app language';
   closeWebView();android('shell','am','force-stop',packageName);
   android('shell','cmd','locale','set-app-locales',packageName,'--user','0','--locales','en');
-  launch();await connectWebView();await activeScore(401);
+  launch();await connectWebView();await recordedScore(401);
   assert.equal(await cdp.evaluate('document.documentElement.lang'),'en');
   assert.match(await cdp.evaluate('document.querySelector("#rules").textContent'),/Rules/);
   if(tapInput){
@@ -212,22 +220,23 @@ try{
    await until(()=>cdp.evaluate("document.documentElement.lang==='da'&&document.querySelector('#language')?.textContent==='DA'"),'In-app Danish selection did not apply.');
    assert.equal(await cdp.evaluate('window.OcheLocale.preference()'),'da');
    assert.equal(await cdp.evaluate('window.OcheGameStore.load()'),savedBeforeLanguage,'Language selection must preserve the saved game.');
-   closeWebView();android('shell','am','force-stop',packageName);launch();await connectWebView();await activeScore(401);
+   closeWebView();android('shell','am','force-stop',packageName);launch();await connectWebView();await recordedScore(401);
    assert.equal(await cdp.evaluate('document.documentElement.lang'),'da','Manual language must survive a process restart.');
    await click('#language');
    await cdp.evaluate("document.querySelector('#app-language').value='system'");
    await click('#save-language');
    await until(()=>cdp.evaluate("document.documentElement.lang==='en'&&document.querySelector('#language')?.textContent==='EN'"),'System language must restore the English Android app locale.');
    assert.equal(await cdp.evaluate('window.OcheLocale.preference()'),'system');
-   await activeScore(401);
+   await recordedScore(401);
   }
  }
  if(Number(badging.match(/versionCode='(\d+)'/)?.[1])>=6){
   stage='finished game session';
   // Complete the real 401 game: two 180 visits, then single 1 and double 20.
-  async function passOpponent(){await click('#next');if(tapInput)await click('#hits-tab');await click('[data-special="miss"]');await click('#next');}
+  async function passOpponent(){if(!autoVisit)await click('#next');if(tapInput)await click('#hits-tab');await click('[data-special="miss"]');await click(autoVisit?'#finish-turn':'#next');}
   for(const total of [180,180]){await passOpponent();await totalVisit(total);}
-  await activeScore(41);await passOpponent();
+  await recordedScore(41);await passOpponent();
+  if(autoVisit)assert.equal(await cdp.evaluate("document.querySelectorAll('.checkout-option').length"),3,'Double-out help must show three legal alternatives when at least three exist.');
   await hitDart(1);await hitDart(20,2);
   await until(()=>cdp.evaluate("Boolean(document.querySelector('.winner #rematch')&&document.querySelector('#another-mode')&&document.querySelector('#end-session'))"),'Completed game did not offer all three session choices.');
   await click('#another-mode');await click('[data-mode="shanghai"]');
@@ -260,9 +269,11 @@ try{
    await hitDart(n,m);assert.equal(await progress(),expected,'Doubles and triples must advance through the numeric route.');await click('#next');
   }
   assert.match(await cdp.evaluate("document.querySelector('#turn-guide').textContent"),/Double/i);
-  await hitDart(20,2);assert.equal(await progress(),22);await click('#next');
+  if(autoVisit){await click('[data-hit="double"]');await click('#add-dart');}else await hitDart(20,2);
+  assert.equal(await progress(),22);await click('#next');
   assert.match(await cdp.evaluate("document.querySelector('#turn-guide').textContent"),/Triple/i);
-  await hitDart(20,3);assert.equal(await progress(),23);await click('#next');
+  if(autoVisit){await click('[data-hit="triple"]');await click('#add-dart');}else await hitDart(20,3);
+  assert.equal(await progress(),23);await click('#next');
   assert.match(await cdp.evaluate("document.querySelector('#turn-guide').textContent"),/Bull/i);
   await hitDart(25);await until(()=>cdp.evaluate("Boolean(document.querySelector('.winner'))"),'Around must finish only after Double, Triple and Bull.');
   assert.equal(await progress(),24);
@@ -286,7 +297,7 @@ try{
  assert.ok(!crashes.includes(packageName),'Android recorded an app crash. See artifacts/android-crash-log.txt.');
  const screenshot=execFileSync(adb,['-s',serial,'exec-out','screencap','-p'],{timeout:15000,maxBuffer:8*1024*1024});
  await writeFile(`${reportPrefix}-native.png`,screenshot);
- if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`\nAndroid API ${api}: exact APK installation, same-key reinstall, real scoring and process-death persistence passed. For versionCode 4+, English/Danish Android app language and Danish native dialog also passed. For versionCode 6+, named-player entry, rematch, cross-mode roster reuse and session ending passed. For versionCode 7+, the visible regular keypad, atomic repeated-tap triple entry and durable in-app language selection also passed. For versionCode8+, top scores, mode guidance, accelerated Around with Double/Triple/Bull stages and extended Cricket category credit also passed.\n`);
+ if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,`\nAndroid API ${api}: exact APK installation, same-key reinstall, real scoring and process-death persistence passed. For versionCode 4+, English/Danish Android app language and Danish native dialog also passed. For versionCode 6+, named-player entry, rematch, cross-mode roster reuse and session ending passed. For versionCode 7+, the visible regular keypad, atomic repeated-tap triple entry and durable in-app language selection also passed. For versionCode 8+, top scores, mode guidance, accelerated Around with Double/Triple/Bull stages and extended Cricket category credit also passed. For versionCode 9+, calculator and numeric Done advance once, one undo restores the pre-calculator turn, the next player persists across process death and language changes, checkout help shows three legal alternatives, and the Around Double/Triple buttons complete their stages.\n`);
  console.log('Native Android smoke passed: install, same-key reinstall, launch, 12-game UI, dartboard Done, undo, numeric score, repeated-tap exact dart entry and process-death persistence.');
 }catch(error){
  let web;

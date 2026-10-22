@@ -2,7 +2,7 @@ import {chromium} from 'playwright';
 import {mkdir} from 'node:fs/promises';
 await mkdir('artifacts',{recursive:true});
 import assert from 'node:assert/strict';
-import {throwHit,enterScore} from './controls.mjs';
+import {throwHit,enterScore,finishVisit} from './controls.mjs';
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',headless:true,args:['--no-sandbox']});
 const BASE=process.env.TEST_BASE_URL || 'http://127.0.0.1:3000';
 const page=await browser.newPage({locale:'da-DK',viewport:{width:1440,height:1100}});
@@ -37,8 +37,8 @@ await page.locator('[data-score-digit=C]').click();assert.equal(await page.locat
 for(const digit of ['1','0','5','⌫','0'])await page.locator(`[data-score-digit="${digit}"]`).click();
 assert.match(await page.locator('#score-done').innerText(),/100/);
 assert.equal(await page.locator('.active-player > strong').innerText(),'501');
-await page.locator('#score-done').click();assert.equal(await page.locator('.active-player > strong').innerText(),'401');
-assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('dartclub')).game.darts.length),3);
+await page.locator('#score-done').click();assert.equal(await page.locator('.player-row > strong').first().innerText(),'401');assert.equal(await page.locator('.active-player .player-name b').innerText(),'Spiller 2');assert.equal(await page.locator('#next').count(),0);
+assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('dartclub')).game.darts.length),0);
 await page.locator('#undo').click();assert.equal(await page.locator('.active-player > strong').innerText(),'501');
 await page.locator('#hits-tab').click();
 const originalSave=await page.evaluate(()=>localStorage.getItem('dartclub'));
@@ -68,7 +68,7 @@ await page.locator('#start').selectOption('301');
 await startGame();
 for(let i=0;i<3;i++)await throwHit(page,20,3);
 assert.match(await page.locator('.active-player').innerText(),/121/);
-await page.locator('#next').click();
+await finishVisit(page);
 await page.locator('#undo').click();
 assert.match(await page.locator('.active-player').innerText(),/Spiller 1/);
 await page.reload();
@@ -81,8 +81,8 @@ await page.locator('#close-rules').click();
 // Start a legitimate 501 game, reaching 141 with six triple twenties.
 await page.evaluate(()=>localStorage.clear());await page.reload();await page.locator('[data-mode=x01]').click();await startGame();
 for(let round=0;round<2;round++){
- for(let i=0;i<3;i++)await throwHit(page,20,3);await page.locator('#next').click();
- await page.locator('[data-special=miss]').click();await page.locator('#next').click();
+ for(let i=0;i<3;i++)await throwHit(page,20,3);await finishVisit(page);
+ await page.locator('[data-special=miss]').click();await finishVisit(page);
 }
 assert.match(await page.locator('.checkout').innerText(),/Triple 20/);
 assert.match(await page.locator('.checkout').innerText(),/Triple 19/);
@@ -105,7 +105,7 @@ for(const id of ['cricket','cutthroat','around','clock','shanghai','halve','coun
  assert.ok((await page.locator('#turn-guide').innerText()).trim());
  const positions=await page.evaluate(()=>({scores:document.querySelector('.match-score-strip').getBoundingClientRect().bottom,input:document.querySelector('.input-panel').getBoundingClientRect().top}));
  assert.ok(positions.scores<=positions.input+1,`${id}: player scores must be above controls`);
- await throwHit(page,['cricket','cutthroat'].includes(id)?20:1);await page.locator('#next').click();
+ await throwHit(page,['cricket','cutthroat'].includes(id)?20:1);await finishVisit(page);
  assert.match(await page.locator('.active-player').innerText(),/Spiller 2/);
  await page.evaluate(()=>localStorage.clear());await page.reload();
 }
@@ -124,13 +124,13 @@ await page.locator('[data-board-n="20"][data-board-m="2"]').click();
 await page.locator('#calculator-bull').click();
 assert.match(await page.locator('.active-player').innerText(),/501/);
 await page.screenshot({path:'artifacts/calculator.png',fullPage:true});
-await page.locator('#calculator-done').click();assert.match(await page.locator('.active-player').innerText(),/376/);
+await page.locator('#calculator-done').click();assert.equal(await page.locator('.player-row > strong').first().innerText(),'376');assert.match(await page.locator('.active-player').innerText(),/Spiller 2/);
 await page.locator('#undo').click();assert.match(await page.locator('.active-player').innerText(),/501/);
 await page.locator('#calculator').click();await page.locator('#total-tab').click();
 for(const n of [1,0,0])await page.locator(`[data-digit="${n}"]`).click();
-await page.locator('#calculator-done').click();assert.match(await page.locator('.active-player').innerText(),/401/);
-await page.locator('#next').click();await throwHit(page,20);
-await page.locator('#bust').click();assert.match(await page.locator('.active-player').innerText(),/501/);assert.match(await page.locator('.turn-message').innerText(),/Bust/);
+await page.locator('#calculator-done').click();assert.equal(await page.locator('.player-row > strong').first().innerText(),'401');
+await throwHit(page,20);
+await page.locator('#bust').click();assert.equal(await page.locator('.player-row > strong').nth(1).innerText(),'501');assert.match(await page.locator('.active-player').innerText(),/401/);assert.match(await page.locator('#visit-feedback').innerText(),/Bust/);
 await page.evaluate(()=>localStorage.clear());await page.reload();
 await page.locator('[data-mode=cricket]').click();await startGame();await page.locator('#calculator').click();
 assert.equal(await page.locator('#total-tab').isDisabled(),true);
@@ -139,10 +139,10 @@ await page.evaluate(()=>localStorage.clear());await page.reload();
 // A manual double-out checkout requires the last field before confirming a win.
 await page.locator('[data-mode=x01]').click();await page.locator('#start').selectOption('301');await startGame();
 for(const total of [180,81]){
- await enterScore(page,total);await page.locator('#next').click();await throwHit(page,0);await page.locator('#next').click();
+ await enterScore(page,total);await throwHit(page,0);await finishVisit(page);
 }
 assert.equal(await page.locator('.active-player > strong').innerText(),'40');
-assert.ok(await page.locator('.checkout-option').count()>1,'A single-double finish must not hide other legal checkouts');
+assert.equal(await page.locator('.checkout-option').count(),3,'Show three legal checkout suggestions');
 const checkoutPosition=await page.evaluate(()=>({checkout:document.querySelector('.checkout').getBoundingClientRect().top,entry:document.querySelector('.number-pad')?.getBoundingClientRect().top??document.querySelector('.hit-pad').getBoundingClientRect().top}));
 assert.ok(checkoutPosition.checkout<checkoutPosition.entry,'Checkout choices must appear before score-entry buttons');
 await page.locator('#score-tab').click();for(const digit of ['4','0'])await page.locator(`[data-score-digit="${digit}"]`).click();

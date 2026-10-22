@@ -85,7 +85,7 @@ test('completed Halve-it turns explain pending halving or added points',()=>{
 
 test('Bust and completed-game instructions replace normal targeting',()=>{
  const busted=bustTurn(throwDart(make('x01'),20));
- assert.match(guidance(busted).title,/Bust/);assert.match(guidance(busted).detail,/Scores are back/);assert.equal(guidance(busted).action,'Next player');
+ assert.match(guidance(busted).title,/Bust/);assert.match(guidance(busted).detail,/Scores are back/);assert.equal(guidance(busted).action,'Done');
  const won=make('around');won.winner=[0];
  assert.match(guidance(won).title,/Alex wins/);assert.equal(guidance(won).target,'Game complete');assert.equal(guidance(won).action,'Rematch or another mode');
 });
