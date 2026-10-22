@@ -43,7 +43,7 @@ public final class MainActivity extends ComponentActivity {
             if (committedLanguagePreference == null) committedLanguagePreference = languageSettings.getString("language", "system");
         }
         webView = new WebView(this);
-        webView.setBackgroundColor(Color.rgb(244, 246, 250));
+        webView.setBackgroundColor(Color.rgb(223, 229, 239));
         setContentView(webView);
         // Keep the scoreboard and controls out of system bars, cutouts and the IME.
         if (Build.VERSION.SDK_INT >= 30) {

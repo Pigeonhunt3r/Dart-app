@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,throwDart,endTurn,checkout,checkoutOptions,recordTotal,bustTurn,points,MODES} from '../src/engine.js';
+import {createGame,throwDart,endTurn,checkout,checkoutOptions,recordTotal,bustTurn,points,MODES,target} from '../src/engine.js';
 const g=(mode,opts)=>createGame(mode,['Anna','Bo'],opts);
 const dart=(s,n,m=1)=>throwDart(s,n,m);
 const turn=(s,ds)=>endTurn(ds.reduce((s,[n,m])=>dart(s,n,m),s));
@@ -12,9 +12,9 @@ test('straight out permits a single finish',()=>{let s=g('x01',{doubleOut:false}
 test('checkout gives T20 T19 D12 for 141 and bullseye for 50',()=>{assert.deepEqual(checkout(141),[{n:20,m:3},{n:19,m:3},{n:12,m:2}]);assert.deepEqual(checkout(50,1),[{n:25,m:2}]);assert.equal(checkout(169),null);assert.equal(checkout(170,2),null);assert.equal(checkout(1,3),null);assert.equal(checkout(40,0),null);assert.deepEqual(checkout(1,1,false),[{n:1,m:1}]);});
 test('every suggested checkout totals correctly and obeys double-out and dart budget',()=>{for(const doubleOut of [true,false])for(let left=1;left<=3;left++)for(let score=1;score<=181;score++){const route=checkout(score,left,doubleOut);if(!route)continue;assert.equal(route.reduce((s,d)=>s+points(d),0),score);assert.ok(route.length<=left);if(doubleOut)assert.equal(route.at(-1).m,2);}});
 test('three-dart double-out range excludes all bogey numbers',()=>{for(const n of [159,162,163,165,166,168,169])assert.equal(checkout(n),null);assert.ok(checkout(170));});
-test('cricket closes, scores overflow, ignores closed opponents, and wins',()=>{let s=dart(g('cricket'),20,3);assert.equal(s.players[0].marks[20],3);s=dart(s,20,2);assert.equal(s.players[0].score,40);s.players[1].marks[20]=3;s=dart(s,20);assert.equal(s.players[0].score,40);s=endTurn(s);assert.equal(s.active,1);s.players[1].marks=Object.fromEntries([15,16,17,18,19,20,25].map(n=>[n,3]));s.players[1].score=50;assert.deepEqual(dart(s,0).winner,[1]);});
+test('cricket closes, scores overflow, ignores closed opponents, and wins',()=>{let s=dart(g('cricket',{cricketVariant:'classic'}),20,3);assert.equal(s.players[0].marks[20],3);s=dart(s,20,2);assert.equal(s.players[0].score,40);s.players[1].marks[20]=3;s=dart(s,20);assert.equal(s.players[0].score,40);s=endTurn(s);assert.equal(s.active,1);s.players[1].marks=Object.fromEntries([15,16,17,18,19,20,25].map(n=>[n,3]));s.players[1].score=50;assert.deepEqual(dart(s,0).winner,[1]);});
 test('cut-throat penalizes only opponents still open',()=>{let s=g('cutthroat');s.players[0].marks[20]=3;s=dart(s,20,3);assert.equal(s.players[0].score,0);assert.equal(s.players[1].score,60);});
-test('around world requires ordered targets and bull',()=>{let s=dart(g('around'),2);assert.equal(s.players[0].progress,1);s=dart(s,1,3);assert.equal(s.players[0].progress,2);s.players[0].progress=21;assert.deepEqual(dart(s,25).winner,[0]);});
+test('classic around world requires ordered targets and bull',()=>{let s=dart(g('around',{aroundVariant:'classic'}),2);assert.equal(s.players[0].progress,1);s=dart(s,1,3);assert.equal(s.players[0].progress,2);s.players[0].progress=21;assert.deepEqual(dart(s,25).winner,[0]);});
 test('double round ignores singles',()=>{let s=dart(g('clock'),1);assert.equal(s.players[0].progress,1);s=dart(s,1,2);assert.equal(s.players[0].progress,2);});
 test('Shanghai wins only with all three multipliers in same turn',()=>{let s=g('shanghai');for(const m of [1,2,3])s=dart(s,1,m);assert.deepEqual(s.winner,[0]);});
 test('Halve-it adds target hits and halves misses',()=>{let s=turn(g('halve'),[[15,3],[20,3],[0,1]]);assert.equal(s.players[0].score,85);s=turn(s,[[20,3],[0,1],[0,1]]);assert.equal(s.players[1].score,20);assert.equal(s.round,2);});
@@ -75,4 +75,85 @@ test('every game requires a nonblank player name instead of generating a default
   const game=createGame(id,[' A ','<B>']);
   assert.deepEqual(game.players.map(player=>player.name),['A','<B>']);
  }
+});
+
+
+test('extended Around the World advances by the hit multiplier and caps at Double',()=>{
+ const original=createGame('around',['A']);
+ assert.equal(original.options.aroundVariant,'extended');
+ assert.equal(dart(original,1,2).players[0].progress,3);
+ assert.equal(dart(original,1,3).players[0].progress,4);
+ assert.equal(dart(original,2,3).players[0].progress,1);
+ assert.equal(original.players[0].progress,1);
+ for(const [progress,n,m] of [[19,19,3],[20,20,2],[20,20,3]]){
+  const state=createGame('around',['A']);state.players[0].progress=progress;
+  const next=dart(state,n,m);assert.equal(next.players[0].progress,21);assert.equal(next.winner,null);assert.equal(target(next),'Double');
+ }
+});
+test('extended Around finishes through separate Double, Triple and Bull stages',()=>{
+ let s=createGame('around',['A']);
+ const visit=(n,m=1)=>{s=endTurn(dart(s,n,m));};
+ for(const [n,m]of [[1,3],[4,2],[6,3],[9,3],[12,3],[15,3],[18,3]])visit(n,m);
+ assert.equal(s.players[0].progress,21);assert.equal(target(s),'Double');
+ visit(20);visit(20,3);visit(25,2);assert.equal(s.players[0].progress,21);
+ visit(20,2);assert.equal(s.players[0].progress,22);assert.equal(target(s),'Triple');
+ visit(1,2);assert.equal(s.players[0].progress,22);
+ visit(1,3);assert.equal(s.players[0].progress,23);assert.equal(target(s),'Bull');assert.equal(s.winner,null);
+ visit(20);assert.equal(s.players[0].progress,23);
+ visit(25);assert.equal(s.players[0].progress,24);assert.deepEqual(s.winner,[0]);
+ const bullseye=createGame('around',['A']);bullseye.players[0].progress=23;
+ assert.deepEqual(dart(bullseye,25,2).winner,[0]);
+});
+test('legacy Around saves retain their classic progression without a variant option',()=>{
+ const legacy=createGame('around',['A'],{aroundVariant:'classic'});delete legacy.options.aroundVariant;
+ assert.equal(dart(legacy,1,3).players[0].progress,2);
+ legacy.players[0].progress=21;assert.equal(target(legacy),'Bull');assert.deepEqual(dart(legacy,25,2).winner,[0]);
+});
+test('low X01 scores retain alternative multi-dart and double-out routes',()=>{
+ const routes=checkoutOptions(40,3,true);
+ assert.ok(routes.length>1);assert.deepEqual(routes[0],[{n:20,m:2}]);
+ assert.ok(routes.some(route=>route.length>1));
+ assert.ok(new Set(routes.map(route=>route.at(-1).n)).size>1);
+ assert.deepEqual(checkoutOptions(40,1,true),[[{n:20,m:2}]]);
+ assert.deepEqual(checkoutOptions(2,3,true),[[{n:1,m:2}]]);
+});
+
+test('extended Cricket credits one selected target per dart without double counting',()=>{
+ let s=g('cricket');assert.equal(s.options.cricketVariant,'extended');
+ s=throwDart(s,20,2,'double');
+ assert.equal(s.players[0].marks.double,1);assert.equal(s.players[0].marks[20]||0,0);assert.equal(s.players[0].score,0);
+ assert.equal(s.darts[0].category,'double');
+ s=throwDart(s,20,3,'triple');
+ assert.equal(s.players[0].marks.triple,1);assert.equal(s.players[0].marks[20]||0,0);
+ s=throwDart(s,20,3);
+ assert.equal(s.players[0].marks[20],3);assert.equal(s.players[0].marks.triple,1);assert.equal(s.players[0].score,0);
+});
+test('extended Cricket requires Double and Triple closures as well as numbers and Bull',()=>{
+ let s=createGame('cricket',['A']);
+ const visit=(n,m=1,category='number')=>{s=endTurn(throwDart(s,n,m,category));};
+ for(const n of [20,19,18,17,16,15])visit(n,3);
+ visit(25,2);visit(25);assert.equal(s.players[0].marks[25],3);assert.equal(s.winner,null);
+ for(let i=0;i<3;i++)visit(7,2,'double');
+ assert.equal(s.players[0].marks.double,3);assert.equal(s.winner,null);
+ for(let i=0;i<3;i++)visit(8,3,'triple');
+ assert.equal(s.players[0].marks.triple,3);assert.deepEqual(s.winner,[0]);
+});
+test('extended Cricket scores extra category hits using the actual field value',()=>{
+ let s=g('cricket');s.players[0].marks.double=3;
+ s=throwDart(s,7,2,'double');assert.equal(s.players[0].score,14);assert.equal(s.players[0].marks[7]||0,0);
+ s.players[1].marks.double=3;s=throwDart(s,20,2,'double');assert.equal(s.players[0].score,14);
+ let cut=createGame('cutthroat',['A','B','C']);cut.players[0].marks.triple=3;cut.players[2].marks.triple=3;
+ cut=throwDart(cut,9,3,'triple');assert.equal(cut.players[0].score,0);assert.equal(cut.players[1].score,27);assert.equal(cut.players[2].score,0);
+});
+test('Cricket categories reject incorrect rings, Bull and classic variants',()=>{
+ for(const [n,m,category]of [[20,1,'double'],[20,3,'double'],[20,2,'triple'],[25,2,'double'],[0,1,'double'],[20,2,'unknown']]){
+  assert.throws(()=>throwDart(g('cricket'),n,m,category));
+ }
+ assert.throws(()=>throwDart(g('cricket',{cricketVariant:'classic'}),20,2,'double'));
+ assert.throws(()=>throwDart(g('x01'),20,2,'double'));
+});
+test('legacy Cricket saves still win with the original seven targets',()=>{
+ const legacy=g('cricket',{cricketVariant:'classic'});delete legacy.options.cricketVariant;
+ legacy.players[0].marks=Object.fromEntries([20,19,18,17,16,15].map(n=>[n,3]));legacy.players[0].marks[25]=2;
+ assert.deepEqual(dart(legacy,25).winner,[0]);
 });

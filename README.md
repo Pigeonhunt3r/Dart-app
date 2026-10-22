@@ -23,8 +23,8 @@ npm test
 ## Spil
 
 - X01: 301, 501, 701 og 1001; double-out eller straight-out. Bust annullerer hele turen. Flere live lukkemuligheder viser single, double, triple og bull med de tilbageværende pile.
-- Cricket og Cut-throat Cricket: 15–20 og bull, lukninger og point.
-- Jorden rundt: 1–20 og bull.
+- Cricket og Cut-throat Cricket: Udvidet variant med 15–20, Double, Triple og Bull; klassisk variant uden de ekstra rækker kan vælges. Lukninger, point og strafpoint følger den valgte variant.
+- Jorden rundt: Udvidet variant med spring på 1/2/3 tal ved single/double/triple, derefter nummereret Double, nummereret Triple og Bull. Klassisk 1–20 og Bull kan vælges.
 - Double-runden: D1–D20.
 - Shanghai: syv runder, øjeblikkelig sejr ved single + double + triple.
 - Halve-it: ni mål, start på 40, halvering ved ingen træffere.
@@ -40,7 +40,7 @@ Der er ingen online multiplayer eller synkronisering mellem enheder. Spillere de
 
 ## Struktur
 
-`src/engine.js` indeholder spilleregler og checkout-beregning som rene funktioner. `src/app.js` styrer brugerflade og lokal lagring. `server.js` leverer de statiske filer uden frameworks. `test/engine.test.js` tester spilforløb, sejre, bust og lukkeveje.
+`src/engine.js` indeholder spilleregler og checkout-beregning som rene funktioner. `src/guidance.js` forklarer næste mål og handling ud fra den aktuelle spilstilling. `src/app.js` styrer brugerflade og lokal lagring. `server.js` leverer de statiske filer uden frameworks. `test/engine.test.js` tester spilforløb, sejre, bust og lukkeveje.
 
 
 ## Android og salg
@@ -80,7 +80,7 @@ Android lint er aktiveret uden baseline eller deaktiverede fejl. Toolchain-scrip
 
 X01 and Count Up open with a regular **0–9 number pad** on the scoring screen. Enter the points scored in the turn (0–180), use Clear or backspace to correct them, then press **Done**. A total is a full turn and can only be entered before any individual darts have been recorded. A double-out finish asks what the final dart hit; an invalid finish is a Bust.
 
-The **Dart hits** view uses repeated target taps instead of separate Single, Double and Triple buttons. Tap a number once for single, twice for double or three times for triple, then press **Add dart**. The selected dart is a preview until confirmed. A fourth tap returns to single. Bull cycles between 25 and Bullseye (50), and Miss records zero. The next dart starts with a fresh selection, including when it hits the same number. Cricket shows its seven scoring targets; all target-based modes keep exact field information so marks, closures and wins remain correct.
+The **Dart hits** view uses repeated target taps instead of separate Single, Double and Triple buttons. Tap a number once for single, twice for double or three times for triple, then press **Add dart**. The selected dart is a preview until confirmed. A fourth tap returns to single. Bull cycles between 25 and Bullseye (50), and Miss records zero. The next dart starts with a fresh selection, including when it hits the same number. Extended Cricket shows nine scoring rows, with Double and Triple before Bull. Choose whether a dart counts toward its number or its separate Double/Triple row, then select the actual numbered field when using a category row. Classic Cricket keeps the original seven rows. All target-based modes keep exact field information so marks, closures and wins remain correct.
 
 Tap the **dartboard icon** to open the hit calculator. Choose the exact single, double or triple field on the board, or use the large Bull/Miss buttons, review the dart previews, and press **Done**. Closing this calculator discards its unconfirmed draft. It also has a numeric-total tab for X01 and Count Up. **Bust** in X01/Elimination cancels the whole turn, including any opponent resets.
 
@@ -88,16 +88,16 @@ Every game card has an **ⓘ** rulebook with the aim, rules and an example. X01 
 
 ## GitHub-builds og testdownloads
 
-Kildekode, Gradle-wrapper, lokale skrifter/licenser, tests og vejledninger ligger i dette repository. `downloads/v1.0.6-alpha.2/` indeholder den versionslåste Preview-APK og en web-ZIP, så de kan hentes direkte fra GitHub uden en appbutik.
+Kildekode, Gradle-wrapper, lokale skrifter/licenser, tests og vejledninger ligger i dette repository. `downloads/v1.0.7-alpha.1/` indeholder den versionslåste Preview-APK og en web-ZIP, så de kan hentes direkte fra GitHub uden en appbutik.
 
 GitHub Actions-workflowen bygger og tester ved pushes til `main` og ved pull requests. `v*-alpha.*`-tags udløser desuden en test-prerelease med APK, web-ZIP og checksums, hvis repositoryets Actions og tokenrettigheder tillader det. Et push eller et tag beviser ikke, at workflowen er gennemført; se Actions-resultatet. Ingen Play Store-, App Store- eller hjemmesideudgivelse udføres.
 
-Efter et lokalt Android-build oprettes en ny, versionslåst Preview-download med `npm run package:downloads -- --create-snapshot v1.0.6-alpha.2` (vælg et nyt tag for næste version). Kontroller den med `--verify-snapshot <tag>`. Udgivelsesworkflowen bruger `--publish-snapshot <tag>` til at kopiere de eksakte signerede filer og afviser ændrede certifikater eller forældede kildefiler. Eksisterende snapshots overskrives ikke.
+Efter et lokalt Android-build oprettes en ny, versionslåst Preview-download med `npm run package:downloads -- --create-snapshot v1.0.7-alpha.1` (vælg et nyt tag for næste version). Kontroller den med `--verify-snapshot <tag>`. Udgivelsesworkflowen bruger `--publish-snapshot <tag>` til at kopiere de eksakte signerede filer og afviser ændrede certifikater eller forældede kildefiler. Eksisterende snapshots overskrives ikke.
 
 
 ## Android-installation og lokal lagring
 
-De oprindelige to testdownloads havde samme app-ID og forskellige debug-signaturer. De kan ikke installeres oven på hinanden. Den nye testapp hedder **Oche Club Preview**, har ID `dk.pigeonarmy.ocheclub.preview`, versionCode 7 og versionName `1.0.6-preview`. Den kan installeres ved siden af den gamle app uden at slette dens data. Produktions-ID'et er fortsat `dk.pigeonarmy.ocheclub`.
+De oprindelige to testdownloads havde samme app-ID og forskellige debug-signaturer. De kan ikke installeres oven på hinanden. Den nye testapp hedder **Oche Club Preview**, har ID `dk.pigeonarmy.ocheclub.preview`, versionCode 8 og versionName `1.0.7-preview`. Den kan installeres ved siden af den gamle app uden at slette dens data. Produktions-ID'et er fortsat `dk.pigeonarmy.ocheclub`.
 
 Preview-signerens offentlige certifikatfingeraftryk ligger i `android/preview-signing-cert.sha256`. Den private nøgle ligger uden for Git og skal bevares sikkert af udgiveren. En ny tilfældig nøgle bliver afvist ved oprettelse af offentlige previews; CI må gerne bygge med sin egen midlertidige debug-nøgle, men den build erstatter ikke den versionslåste download.
 
@@ -122,3 +122,13 @@ Every fresh game setup starts with blank name fields. Each player must enter 1�
 The scoring interface uses cool light surfaces, slate text, a blue accent, larger active-player scores and touch-sized controls. A visible numeric keypad, a real dartboard calculator button and repeated-tap field entry replace the previous multiplier selector. Player setup, rematches, continuing with the same group, rulebooks, offline scoring and acknowledged local saves remain available.
 
 From Preview 1.0.6, the EN/DA button opens App language: follow the system, English or Dansk. Android reads its system/per-app locale from LocaleManager before creating WebView. An explicit choice is saved separately from the game and persists after restart; returning to System language restores the Android or browser preference. Language changes preserve the saved game and undo history.
+
+## Scores, live guidance and extended rules (Preview 1.0.7)
+
+All player scores appear above score entry, with the active player highlighted. The interface uses a darker slate backdrop and cool gray panels. Every mode explains the current target, what counts, and whether to add a dart, finish the turn or move to the next player. X01 shows its available checkout alternatives beside score entry; a direct double finish does not hide other valid combinations. If only one finish is legal with the darts left, only that finish is shown.
+
+Fresh Around the World games use the extended variant: hit the current numbered target to advance one/two/three numbers for single/double/triple, stopping at the separate Double stage. Finish with any numbered double (D1–D20), any numbered triple (T1–T20), then Bull or Bullseye. Those three stages must be completed in order; Bullseye does not satisfy the numbered Double stage. Classic mode advances one target per hit and goes directly from 20 to Bull.
+
+Fresh Cricket and Cut-throat games use nine rows: 20–15, Double, Triple and Bull. Each row needs three marks. A D20 can count as two marks on 20 **or** one mark on Double; one dart credits one row. Three numbered doubles close Double, and three numbered triples close Triple. Extra category hits use the actual field value while an opponent has that category open, either adding your points in Cricket or penalty points in Cut-throat. Bullseye gives two Bull marks. Classic mode has the original numbers and Bull only.
+
+The setup screen offers Extended and Classic rules. Existing saved games with no variant setting retain Classic rules, including undo and rematch, so an update does not change a match already underway.

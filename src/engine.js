@@ -1,9 +1,9 @@
 import {t} from './i18n.js';
 export const MODES=[
 {id:'x01',name:'501 & X01',tag:t("The classic"),icon:'01',description:t("301, 501, 701 or 1001. Reach exactly zero."),rules:t("Subtract each score from your starting total and reach exactly 0. In double-out, your last dart must be a double, including bullseye. Going below 0, leaving 1 in double-out, or finishing on the wrong field is a bust: every point from that turn is cancelled.")},
-{id:'cricket',name:'Cricket',tag:t("Tactical"),icon:'✳',description:t("Close 15–20 and bull. Score along the way."),rules:t("Close 15, 16, 17, 18, 19, 20 and bull with three marks on each target. A single gives one mark, a double two and a triple three. Extra hits score points while at least one opponent has that target open. Close every target and have at least as many points as every opponent to win.")},
-{id:'cutthroat',name:'Cut-throat Cricket',tag:t("Tactical"),icon:'⚔',description:t("Cricket with penalty points for your opponents."),rules:t("Play Cricket, but extra hits add points to every opponent who has not closed that target. Close every target and have the lowest score to win. A tie for the lowest score is enough.")},
-{id:'around',name:t("Around the World"),tag:t("Precision"),icon:'◎',description:t("Travel from 1 to 20 and finish on bull."),rules:t("Hit 1 through 20 in order, then bull. Singles, doubles and triples each count as one successful hit. You may advance through several targets in one turn. The first player to complete the route wins.")},
+{id:'cricket',name:'Cricket',tag:t("Tactical"),icon:'✳',description:t("Close 15–20, Double, Triple and Bull."),rules:t("Extended Cricket has nine rows: 20, 19, 18, 17, 16, 15, Double, Triple and Bull. Close each row with three marks. On a number, single/double/triple gives one/two/three marks. Each numbered double or triple can instead give one mark to its separate Double or Triple row: choose one row for that dart. Bullseye gives two Bull marks. Extra hits score the actual field value while an opponent has that row open. Close all rows and have at least as many points as every opponent to win. Classic mode uses the six numbers and Bull without separate Double/Triple rows.")},
+{id:'cutthroat',name:'Cut-throat Cricket',tag:t("Tactical"),icon:'⚔',description:t("Cricket with penalty points for your opponents."),rules:t("Use the same targets and one-row-per-dart choice as Cricket. Extra hits add penalty points to each opponent whose row is still open. Close every row and have the fewest penalty points to win; a tie is enough. Extended mode adds separate Double and Triple rows before Bull. Classic mode has only 15–20 and Bull.")},
+{id:'around',name:t("Around the World"),tag:t("Precision"),icon:'◎',description:t("Advance through 1–20, then Double, Triple and Bull."),rules:t("In the extended game, hit your current number from 1 to 20: a single advances one number, a double two and a triple three. After the numbered targets, hit any numbered double, then any numbered triple, then bull (25 or 50) to win. You must complete those final three stages in order. Classic mode advances one number for every hit and goes directly from 20 to bull.")},
 {id:'clock',name:t("Around the Doubles"),tag:t("Precision"),icon:'◷',description:t("All 20 doubles. The ultimate practice round."),rules:t("Hit double 1 through double 20 in order. Only your current double counts. The first player to reach and hit double 20 wins.")},
 {id:'shanghai',name:'Shanghai',tag:t("7 rounds"),icon:'✧',description:t("Single, double and triple on the same number."),rules:t("Play seven rounds with targets 1 through 7. Only the current target scores. Hit its single, double and triple in the same turn for Shanghai and an immediate win. Otherwise, the highest score after seven rounds wins. Tied scores share the win.")},
 {id:'halve',name:'Halve-it',tag:t("9 rounds"),icon:'½',description:t("Hit the target or halve your score."),rules:t("Start at 40. The targets are 15, 16, double, 17, 18, triple, 19, 20 and bull. Only hits on the target score. If all three darts miss the target, halve your score, rounding down. The highest score after nine rounds wins.")},
@@ -21,11 +21,18 @@ export function createGame(mode,names,options={}){
  if(playerNames.some(name=>!name))throw Error(t('Enter a name for every player (at least one non-space character).'));
  if(playerNames.some(name=>name.length>24))throw Error(t('Player names must be 24 characters or fewer.'));
  const start=[301,501,701,1001].includes(Number(options.start))?Number(options.start):501;
- return {mode,options:{start,doubleOut:options.doubleOut!==false},players:playerNames.map((name,i)=>({name,score:mode==='x01'?start:mode==='halve'?40:0,marks:{},progress:1,lives:3,killer:false,target:i+1})),active:0,round:1,darts:[],winner:null,message:'',turnStart:null};
+ return {mode,options:{start,doubleOut:options.doubleOut!==false,...(mode==='around'?{aroundVariant:options.aroundVariant==='classic'?'classic':'extended'}:{}),...(['cricket','cutthroat'].includes(mode)?{cricketVariant:options.cricketVariant==='classic'?'classic':'extended'}:{})},players:playerNames.map((name,i)=>({name,score:mode==='x01'?start:mode==='halve'?40:0,marks:{},progress:1,lives:3,killer:false,target:i+1})),active:0,round:1,darts:[],winner:null,message:'',turnStart:null};
 }
 export const points=d=>d.n*d.m;
+export const isExtendedAround=g=>g.options?.aroundVariant==='extended';
+export const isExtendedCricket=g=>['cricket','cutthroat'].includes(g.mode)&&g.options?.cricketVariant==='extended';
+export const cricketTargets=g=>isExtendedCricket(g)?[20,19,18,17,16,15,'double','triple',25]:[20,19,18,17,16,15,25];
+export const targetLabel=value=>value==='double'?t('Double'):value==='triple'?t('Triple'):value===25||value==='Bull'?'Bull':String(value);
 export function target(g){
- if(g.mode==='around')return g.players[g.active].progress===21?'Bull':g.players[g.active].progress;
+ if(g.mode==='around'){
+  const progress=g.players[g.active].progress;
+  return isExtendedAround(g)?({21:'Double',22:'Triple',23:'Bull'}[progress]??progress):progress===21?'Bull':progress;
+ }
  if(g.mode==='clock')return 'D'+g.players[g.active].progress;
  if(g.mode==='halve')return [15,16,'Double',17,18,'Triple',19,20,'Bull'][g.round-1];
  if(['shanghai','baseball','golf'].includes(g.mode))return g.round;
@@ -38,25 +45,34 @@ export function gameMessage(state){
  return state.message||'';
 }
 function finish(g,indices){g.winner=indices;g.message=gameMessage(g);}
-function evaluateCricket(g){const p=g.players[g.active];if([15,16,17,18,19,20,25].every(n=>(p.marks[n]||0)>=3)&&g.players.every(q=>g.mode==='cricket'?p.score>=q.score:p.score<=q.score))finish(g,[g.active]);}
-export function throwDart(state,n,m=1){
+function evaluateCricket(g){const p=g.players[g.active];if(cricketTargets(g).every(n=>(p.marks[n]||0)>=3)&&g.players.every(q=>g.mode==='cricket'?p.score>=q.score:p.score<=q.score))finish(g,[g.active]);}
+export function throwDart(state,n,m=1,category='number'){
  if(state.winner!==null||state.darts.length>=3) return state;
  if(!Number.isInteger(n)||![0,...Array.from({length:20},(_,i)=>i+1),25].includes(n)||![1,2,3].includes(m)||(n===25&&m===3)||(n===0&&m!==1))throw Error(t("Invalid dart"));
+ if(!['number','double','triple'].includes(category)||(category!=='number'&&(!isExtendedCricket(state)||n<1||n>20||m!==(category==='double'?2:3))))throw Error(t('Choose a numbered double or triple that matches the selected row.'));
  const g=structuredClone(state);if(!g.turnStart)g.turnStart=structuredClone(g.players);
- const d={n,m};g.darts.push(d);g.message='';const p=g.players[g.active],v=points(d);
+ const d=category==='number'?{n,m}:{n,m,category};g.darts.push(d);g.message='';const p=g.players[g.active],v=points(d);
  if(g.mode==='x01'){
   const left=p.score-v;
   if(left<0||(g.options.doubleOut&&left===1)||(left===0&&g.options.doubleOut&&m!==2)){
    g.players=structuredClone(g.turnStart);g.message=t("Bust! Points from this turn are cancelled.");while(g.darts.length<3)g.darts.push({n:0,m:1,bust:true});
   }else {p.score=left;if(left===0)finish(g,[g.active]);}
  }else if(['cricket','cutthroat'].includes(g.mode)){
-  if(n>=15){const old=p.marks[n]||0,extra=Math.max(0,old+m-3);p.marks[n]=Math.min(3,old+m);
-   if(g.mode==='cricket'){if(g.players.some((q,i)=>i!==g.active&&(q.marks[n]||0)<3))p.score+=extra*n;}
-   else g.players.forEach((q,i)=>{if(i!==g.active&&(q.marks[n]||0)<3)q.score+=extra*n;});
+  if(category!=='number'||n>=15){const row=category==='number'?n:category,marks=category==='number'?m:1,old=p.marks[row]||0,extra=Math.max(0,old+marks-3),scored=extra*(category==='number'?n:v);p.marks[row]=Math.min(3,old+marks);
+   if(g.mode==='cricket'){if(g.players.some((q,i)=>i!==g.active&&(q.marks[row]||0)<3))p.score+=scored;}
+   else g.players.forEach((q,i)=>{if(i!==g.active&&(q.marks[row]||0)<3)q.score+=scored;});
   }evaluateCricket(g);
- }else if(['around','clock'].includes(g.mode)){
-  if(n===(p.progress===21?25:p.progress)&&(g.mode==='around'||m===2))p.progress++;
-  if(p.progress>(g.mode==='around'?21:20))finish(g,[g.active]);
+ }else if(g.mode==='around'){
+  if(isExtendedAround(g)){
+   if(p.progress<=20&&n===p.progress)p.progress=Math.min(21,p.progress+m);
+   else if(p.progress===21&&n>=1&&n<=20&&m===2)p.progress=22;
+   else if(p.progress===22&&n>=1&&n<=20&&m===3)p.progress=23;
+   else if(p.progress===23&&n===25)p.progress=24;
+   if(p.progress>23)finish(g,[g.active]);
+  }else{if(n===(p.progress===21?25:p.progress))p.progress++;if(p.progress>21)finish(g,[g.active]);}
+ }else if(g.mode==='clock'){
+  if(n===p.progress&&m===2)p.progress++;
+  if(p.progress>20)finish(g,[g.active]);
  }else if(g.mode==='shanghai'){
   if(n===g.round)p.score+=v;
   if([1,2,3].every(mult=>g.darts.some(x=>x.n===g.round&&x.m===mult)))finish(g,[g.active]);
@@ -82,7 +98,7 @@ export function endTurn(state){
  if(next<=g.active){if(limits[g.mode]&&g.round===limits[g.mode]){const scores=g.players.map(q=>q.score),best=g.mode==='golf'?Math.min(...scores):Math.max(...scores);finish(g,scores.map((v,i)=>v===best?i:-1).filter(i=>i>=0));return g;}g.round++;}
  g.active=next;g.darts=[];g.turnStart=null;g.message='';return g;
 }
-export function dartLabel(d){if(d.totalEntry)return 'Total '+d.total;if(d.notThrown||d.bust)return '—';return d.n===0?t("Miss"):d.n===25?(d.m===2?'Bullseye':'Bull'):(d.m===3?'T':d.m===2?'D':'')+d.n;}
+export function dartLabel(d){if(d.totalEntry)return 'Total '+d.total;if(d.notThrown||d.bust)return '—';const label=d.n===0?t("Miss"):d.n===25?(d.m===2?'Bullseye':'Bull'):(d.m===3?'T':d.m===2?'D':'')+d.n;return d.category&&d.category!=='number'?label+' · '+targetLabel(d.category):label;}
 // Shortest possible checkout using the darts left in this turn. Bullseye is a double.
 export function checkout(score,dartsLeft=3,doubleOut=true){
  if(!Number.isInteger(score)||score<=0||dartsLeft<1)return null;

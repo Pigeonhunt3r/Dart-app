@@ -24,6 +24,9 @@ for(const id of ['x01','cricket','cutthroat','around','clock','shanghai','halve'
 await page.screenshot({path:'artifacts/desktop.png',fullPage:true});
 // The ordinary turn-total keypad is visible immediately; dartboard entry is one icon away.
 await page.locator('[data-mode=x01]').click();await startGame();
+assert.equal(await page.locator('.match-score-strip .player-row').count(),2);
+assert.equal(await page.locator('.player-row').count(),2);
+assert.ok((await page.locator('#turn-guide').innerText()).trim());
 assert.equal(await page.locator('[data-score-digit]').count(),12);
 assert.equal(await page.locator('[data-mult]').count(),0);
 assert.equal(await page.locator('#calculator svg').count(),1);
@@ -88,6 +91,7 @@ await throwHit(page,20,3);await throwHit(page,19,3);await throwHit(page,12,2);
 assert.match(await page.locator('.winner').innerText(),/Spiller 1 vinder/);
 await page.locator('#rematch').click();assert.match(await page.locator('.active-player').innerText(),/501/);
 await page.setViewportSize({width:390,height:844});
+assert.ok(await page.evaluate(()=>document.querySelector('.match-score-strip').getBoundingClientRect().bottom<=document.querySelector('.input-panel').getBoundingClientRect().top+1));
 await page.screenshot({path:'artifacts/mobile-match.png',fullPage:true});
 assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
 await page.evaluate(()=>localStorage.clear());await page.reload();
@@ -97,6 +101,10 @@ await page.locator('[data-filter="Præcision"]').click();assert.equal(await page
 await page.locator('[data-filter="Alle"]').click();
 for(const id of ['cricket','cutthroat','around','clock','shanghai','halve','countup','baseball','killer','elimination','golf']){
  await page.locator(`[data-mode=${id}]`).click();await startGame();
+ assert.equal(await page.locator('.match-score-strip .player-row').count(),2);
+ assert.ok((await page.locator('#turn-guide').innerText()).trim());
+ const positions=await page.evaluate(()=>({scores:document.querySelector('.match-score-strip').getBoundingClientRect().bottom,input:document.querySelector('.input-panel').getBoundingClientRect().top}));
+ assert.ok(positions.scores<=positions.input+1,`${id}: player scores must be above controls`);
  await throwHit(page,['cricket','cutthroat'].includes(id)?20:1);await page.locator('#next').click();
  assert.match(await page.locator('.active-player').innerText(),/Spiller 2/);
  await page.evaluate(()=>localStorage.clear());await page.reload();
@@ -134,6 +142,9 @@ for(const total of [180,81]){
  await enterScore(page,total);await page.locator('#next').click();await throwHit(page,0);await page.locator('#next').click();
 }
 assert.equal(await page.locator('.active-player > strong').innerText(),'40');
+assert.ok(await page.locator('.checkout-option').count()>1,'A single-double finish must not hide other legal checkouts');
+const checkoutPosition=await page.evaluate(()=>({checkout:document.querySelector('.checkout').getBoundingClientRect().top,entry:document.querySelector('.number-pad')?.getBoundingClientRect().top??document.querySelector('.hit-pad').getBoundingClientRect().top}));
+assert.ok(checkoutPosition.checkout<checkoutPosition.entry,'Checkout choices must appear before score-entry buttons');
 await page.locator('#score-tab').click();for(const digit of ['4','0'])await page.locator(`[data-score-digit="${digit}"]`).click();
 await page.locator('#score-done').click();assert.ok((await page.locator('#score-error').innerText()).length>0);
 assert.equal(await page.locator('.active-player > strong').innerText(),'40');assert.equal(await page.locator('.winner').count(),0);
