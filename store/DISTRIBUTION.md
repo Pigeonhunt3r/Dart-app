@@ -1,6 +1,6 @@
 # Android, iPhone and direct installation
 
-For the latest test download, use **Oche Club Preview 1.0.10** from `downloads/README.md`. Its separate preview ID avoids conflicts with the original alpha app.
+For the latest test download, use **Oche Club Preview 1.0.11** from `downloads/README.md`. Its separate preview ID avoids conflicts with the original alpha app.
 
 The shared scorekeeping code and UI are local web assets. Android packages those assets in a native application shell. Export them with `npm run build:web` for an installable web app and for the later iOS shell; no desktop Node server is embedded in the native Android app.
 

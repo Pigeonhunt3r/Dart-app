@@ -2,6 +2,12 @@
 
 This records development checks, not commercial store readiness.
 
+## Preview 1.0.11 live calculator total
+
+The dartboard calculator displays a large live total and the per-dart addition above the board. The total remains with Done while scrolling, including on a 320px phone. Numeric entry, backspace, Clear, Miss and last-dart Undo update the total; switching input tabs shows the active draft’s total. Closing or editing a draft does not write a score until Done.
+
+Local checks passed: 77 unit tests, all eight browser suites, JavaScript syntax, web export, Android debug/unsigned release APK/AAB builds, and lint (0 errors, 2 existing warnings). Calculator browser checks cover 0 → 60 → 100 → 125, Undo/Miss, the addition, draft-only saves, tab changes, numeric editing and narrow-screen scrolling/overflow. An English 390px screenshot is in `store/screenshots/1.0.11-calculator-total.png`; the full browser suite also exercises Danish. The immutable snapshot verifies the preserved Preview certificate and exact source assets. Exact tagged-APK Android 15/16 tests gate publication and check live board/numeric totals in the Android WebView.
+
 ## Preview 1.0.10 dark surfaces and averages
 
 This revision changes the entire interface and Android/web shell to dark navy/slate surfaces. New X01/Count Up games track per-player three-dart averages with immutable scores: misses, Bust, numeric totals, partial visits, actual checkout dart counts, Undo, reload and Rematch. Older saves remain playable without fabricated historical averages.

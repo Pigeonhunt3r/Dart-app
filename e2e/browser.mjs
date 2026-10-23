@@ -119,15 +119,44 @@ assert.equal(await page.evaluate(()=>localStorage.getItem('dartclub')),null);
 // Dartboard calculator is a draft until Done; numeric totals consume a full visit.
 await page.locator('[data-mode=x01]').click();await startGame();
 await page.locator('#calculator').click();
-await page.locator('[data-board-n="20"][data-board-m="3"]').click();
-await page.locator('[data-board-n="20"][data-board-m="2"]').click();
-await page.locator('#calculator-bull').click();
+const calculatorTotal=async total=>{
+ assert.equal(await page.locator('#calculator-total').innerText(),String(total));
+ assert.equal(await page.locator('#calculator-running-total').innerText(),String(total));
+};
+await calculatorTotal(0);
+const calculatorSave=await page.evaluate(()=>localStorage.getItem('dartclub'));
+await page.locator('[data-board-n="20"][data-board-m="3"]').click();await calculatorTotal(60);
+await page.locator('[data-board-n="20"][data-board-m="2"]').click();await calculatorTotal(100);
+await page.locator('#calculator-bull').click();await calculatorTotal(125);
+assert.equal(await page.locator('.calculator-equation').innerText(),'60 + 40 + 25 =');
+await page.locator('#calculator-undo').click();await calculatorTotal(100);
+await page.locator('#calculator-miss').click();await calculatorTotal(100);
+assert.equal(await page.locator('.calculator-equation').innerText(),'60 + 40 + 0 =');
+await page.locator('#calculator-undo').click();await page.locator('#calculator-bull').click();await calculatorTotal(125);
+assert.equal(await page.evaluate(()=>localStorage.getItem('dartclub')),calculatorSave,'Running totals must stay a draft until Done.');
+assert.ok(await page.evaluate(()=>document.querySelector('.calculator-sum').getBoundingClientRect().bottom<=document.querySelector('.scoring-board').getBoundingClientRect().top));
+await page.setViewportSize({width:320,height:640});
+await page.locator('dialog').evaluate(dialog=>{dialog.scrollTop=dialog.scrollHeight;});
+assert.ok(await page.locator('#calculator-running-total').evaluate(total=>{const r=total.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;}),'Running total stays visible with Done on a small phone.');
+assert.ok(await page.locator('dialog').evaluate(dialog=>dialog.scrollWidth<=dialog.clientWidth),'Calculator must fit a narrow phone.');
+await page.setViewportSize({width:390,height:844});
 assert.match(await page.locator('.active-player').innerText(),/501/);
 await page.screenshot({path:'artifacts/calculator.png',fullPage:true});
 await page.locator('#calculator-done').click();assert.equal(await page.locator('.player-row > strong').first().innerText(),'376');assert.match(await page.locator('.active-player').innerText(),/Spiller 2/);
 await page.locator('#undo').click();assert.match(await page.locator('.active-player').innerText(),/501/);
 await page.locator('#calculator').click();await page.locator('#total-tab').click();
+const numericTotal=async total=>{
+ assert.equal(await page.locator('#total-display').innerText(),String(total));
+ assert.equal(await page.locator('#calculator-running-total').innerText(),String(total));
+};
+await numericTotal(0);
+for(const [digit,total] of [[1,1],[0,10],[0,100]]){await page.locator(`[data-digit="${digit}"]`).click();await numericTotal(total);}
+await page.locator('[data-digit="⌫"]').click();await numericTotal(10);
+await page.locator('[data-digit="C"]').click();await numericTotal(0);
 for(const n of [1,0,0])await page.locator(`[data-digit="${n}"]`).click();
+await page.locator('#board-tab').click();await calculatorTotal(0);
+await page.locator('[data-board-n="25"][data-board-m="2"]').click();await calculatorTotal(50);
+await page.locator('#total-tab').click();await numericTotal(100);
 await page.locator('#calculator-done').click();assert.equal(await page.locator('.player-row > strong').first().innerText(),'401');
 await throwHit(page,20);
 await page.locator('#bust').click();assert.equal(await page.locator('.player-row > strong').nth(1).innerText(),'501');assert.match(await page.locator('.active-player').innerText(),/401/);assert.match(await page.locator('#visit-feedback').innerText(),/Bust/);

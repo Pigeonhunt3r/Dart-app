@@ -207,10 +207,26 @@ try{
   assert.ok((await cdp.evaluate("document.querySelector('#turn-guide')?.textContent||''")).trim(),'The match must explain the next action.');
  }
  await click('#calculator');
- await click('[data-board-n="20"][data-board-m="3"]');await click('#calculator-done');await recordedScore(441);
+ if(versionCode>=13)assert.equal(await cdp.evaluate("document.querySelector('#calculator-total').textContent.trim()"),'0');
+ await click('[data-board-n="20"][data-board-m="3"]');
+ if(versionCode>=13){
+  assert.equal(await cdp.evaluate("document.querySelector('#calculator-total').textContent.trim()"),'60');
+  assert.equal(await cdp.evaluate("document.querySelector('#calculator-running-total').textContent.trim()"),'60');
+ }
+ await click('#calculator-done');await recordedScore(441);
  if(autoVisit)assert.equal(await cdp.evaluate('JSON.parse(window.OcheGameStore.load()).history.length'),1,'Calculator Done must save the partial visit and advance in one undo action.');
  await click('#undo');await activeScore(501);await averageStats(0,0,0);
  if(autoVisit)assert.equal(await cdp.evaluate('JSON.parse(window.OcheGameStore.load()).game.active'),0,'One undo must restore Player 1 as well as the score.');
+ if(versionCode>=13){
+  stage='live numeric calculator total';
+  await click('#calculator');await click('#total-tab');
+  for(const [digit,total] of [[1,'1'],[0,'10'],[0,'100'],['⌫','10'],['C','0']]){
+   await click(`[data-digit="${digit}"]`);
+   assert.equal(await cdp.evaluate("document.querySelector('#total-display').textContent.trim()"),total);
+   assert.equal(await cdp.evaluate("document.querySelector('#calculator-running-total').textContent.trim()"),total);
+  }
+  await click('#close-calculator');await activeScore(501);
+ }
  if(tapInput){
   stage='tap-to-cycle exact dart';
   assert.equal(await cdp.evaluate("document.querySelectorAll('#calculator svg').length"),1,'The calculator launcher must show a dartboard icon.');

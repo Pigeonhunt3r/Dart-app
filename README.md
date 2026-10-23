@@ -88,16 +88,16 @@ Every game card has an **ⓘ** rulebook with the aim, rules and an example. X01 
 
 ## GitHub-builds og testdownloads
 
-Kildekode, Gradle-wrapper, lokale skrifter/licenser, tests og vejledninger ligger i dette repository. `downloads/v1.0.10-alpha.2/` indeholder den versionslåste Preview-APK og en web-ZIP, så de kan hentes direkte fra GitHub uden en appbutik.
+Kildekode, Gradle-wrapper, lokale skrifter/licenser, tests og vejledninger ligger i dette repository. `downloads/v1.0.11-alpha.1/` indeholder den versionslåste Preview-APK og en web-ZIP, så de kan hentes direkte fra GitHub uden en appbutik.
 
 GitHub Actions-workflowen bygger og tester ved pushes til `main` og ved pull requests. `v*-alpha.*`-tags udløser desuden en test-prerelease med APK, web-ZIP og checksums, hvis repositoryets Actions og tokenrettigheder tillader det. Et push eller et tag beviser ikke, at workflowen er gennemført; se Actions-resultatet. Ingen Play Store-, App Store- eller hjemmesideudgivelse udføres.
 
-Efter et lokalt Android-build oprettes en ny, versionslåst Preview-download med `npm run package:downloads -- --create-snapshot v1.0.10-alpha.2` (vælg et nyt tag for næste version). Kontroller den med `--verify-snapshot <tag>`. Udgivelsesworkflowen bruger `--publish-snapshot <tag>` til at kopiere de eksakte signerede filer og afviser ændrede certifikater eller forældede kildefiler. Eksisterende snapshots overskrives ikke.
+Efter et lokalt Android-build oprettes en ny, versionslåst Preview-download med `npm run package:downloads -- --create-snapshot v1.0.11-alpha.1` (vælg et nyt tag for næste version). Kontroller den med `--verify-snapshot <tag>`. Udgivelsesworkflowen bruger `--publish-snapshot <tag>` til at kopiere de eksakte signerede filer og afviser ændrede certifikater eller forældede kildefiler. Eksisterende snapshots overskrives ikke.
 
 
 ## Android-installation og lokal lagring
 
-De oprindelige to testdownloads havde samme app-ID og forskellige debug-signaturer. De kan ikke installeres oven på hinanden. Den nye testapp hedder **Oche Club Preview**, har ID `dk.pigeonarmy.ocheclub.preview`, versionCode 12 og versionName `1.0.10-preview`. Den kan installeres ved siden af den gamle app uden at slette dens data. Produktions-ID'et er fortsat `dk.pigeonarmy.ocheclub`.
+De oprindelige to testdownloads havde samme app-ID og forskellige debug-signaturer. De kan ikke installeres oven på hinanden. Den nye testapp hedder **Oche Club Preview**, har ID `dk.pigeonarmy.ocheclub.preview`, versionCode 13 og versionName `1.0.11-preview`. Den kan installeres ved siden af den gamle app uden at slette dens data. Produktions-ID'et er fortsat `dk.pigeonarmy.ocheclub`.
 
 Preview-signerens offentlige certifikatfingeraftryk ligger i `android/preview-signing-cert.sha256`. Den private nøgle ligger uden for Git og skal bevares sikkert af udgiveren. En ny tilfældig nøgle bliver afvist ved oprettelse af offentlige previews; CI må gerne bygge med sin egen midlertidige debug-nøgle, men den build erstatter ikke den versionslåste download.
 
@@ -157,3 +157,8 @@ The entire app now uses a dark navy background, slate panels and lighter text. P
 New X01 and Count Up games show each player's **three-dart average** beside the score: points scored ÷ darts counted × 3, displayed to two decimal places. Misses count, and an X01 Bust cancels the turn's points while counting a three-dart visit. Averages update with exact hits and numeric totals, persist with the match, follow Undo, and reset on Rematch.
 
 A normal numeric turn total counts as three darts. When entering a checkout total, choose the actual 1–3 darts used; the app checks that the finish is possible in that count. Exact-hit checkouts already know their dart count. Older saved games retain their scores and names, but cannot have a reliable historical average calculated without dart counts: start a new game or rematch to enable tracking. The About averages disclosure explains this beside the player cards.
+
+
+## Live calculator total (Preview 1.0.11)
+
+The dartboard calculator shows a large running total above the board, with each dart’s points in an addition such as 60 + 40 + 25 = 125. The total also stays visible with Done while scrolling. The numeric tab updates this footer total on every digit, deletion and Clear. Undo removes the last dart from the sum. These are draft hit totals; Done applies the selected game’s scoring rules.
