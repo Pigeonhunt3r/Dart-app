@@ -165,10 +165,17 @@ async function typePlayers(names){
  await cdp.evaluate('document.activeElement.blur()');
 }
 function launch(){
+ // CDP renderer input does not wake an idle Android display. Real Back needs an
+ // awake, unlocked emulator, including after process death and locale changes.
+ android('shell','input','keyevent','224'); // KEYCODE_WAKEUP is idempotent.
+ android('shell','wm','dismiss-keyguard');
  const output=android('shell','am','start','-W','-n',`${packageName}/${activity}`);
  assert.ok(!/^Error:/m.test(output),output);
 }
 try{
+ // These tests drive WebView through CDP; unlike physical touches this does not
+ // reset Android's display idle timer. Keep this isolated emulator awake.
+ android('shell','settings','put','system','screen_off_timeout','2147483647');
  // Reproduce an existing original app and prove Preview installs alongside it.
  const legacy=path.resolve('downloads/v1.0.0-alpha.1/OcheClub-1.0.0-debug.apk');
  if(packageName==='dk.pigeonarmy.ocheclub.preview'&&existsSync(legacy)){
@@ -415,7 +422,15 @@ try{
 }catch(error){
  let web;
  if(cdp){try{web=await cdp.evaluate("({url:location.href,cards:document.querySelectorAll('.game-card').length,player:document.querySelector('.active-player')?.innerText,dialog:document.querySelector('dialog[open]')?.innerText,darts:[...document.querySelectorAll('.dart-slot')].map(e=>e.innerText),body:document.body.innerText.slice(0,1800)})");}catch{}}
- const detail=JSON.stringify({api,stage,error:error.message,lastClick,web});
+ let native;
+ try{
+  native={
+   activities:android('shell','dumpsys','activity','activities').split('\n').filter(line=>/ResumedActivity|mFocusedApp/.test(line)),
+   focus:android('shell','dumpsys','window').split('\n').filter(line=>/mCurrentFocus|mFocusedApp|mShowingLockscreen/.test(line)),
+   power:android('shell','dumpsys','power').split('\n').filter(line=>/mWakefulness=|mStayOn=|mScreenOffTimeoutSetting=|Display Power:/.test(line))
+  };
+ }catch{}
+ const detail=JSON.stringify({api,stage,error:error.message,lastClick,native,web});
  console.error('::error title=Native Android diagnostic::'+detail.slice(0,5000).replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A'));
  if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,'\n## Native Android diagnostic\n\n    '+detail.replaceAll('\n','\n    ')+'\n');
  try{await writeFile(`${reportPrefix}-failure-logcat.txt`,android('logcat','-d','-t','1000'));}catch{}
