@@ -146,7 +146,7 @@ function scoreDigit(value){
  entry.error='';entry.finish='';entry.dartsUsed=3;render();
 }
 document.addEventListener('keydown',e=>{
- if(screen!=='game'||document.querySelector('dialog[open]')||!$('#score-done')||game.winner!==null||game.darts.length||['INPUT','SELECT','TEXTAREA','BUTTON'].includes(e.target.tagName))return;
+ if(screen!=='game'||document.querySelector('dialog[open]')||!$('#score-done')||game.winner!==null||game.darts.length||e.target.closest?.('input, select, textarea, button, a, summary, [contenteditable]:not([contenteditable="false"])'))return;
  if(/^[0-9]$/.test(e.key)){e.preventDefault();scoreDigit(e.key);}else if(e.key==='Backspace'){e.preventDefault();scoreDigit('⌫');}else if(e.key==='Enter'&&entry.digits){e.preventDefault();$('#score-done').click();}
 });
 

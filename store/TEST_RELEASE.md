@@ -12,7 +12,7 @@ Numeric turn totals normally count as three darts. For a checkout total, choose 
 
 English/Danish language support, all 12 modes/rulebooks, top player scores, Around Double/Triple buttons, one-step X01 Done, up to three legal checkout routes and themed confirmations remain available offline.
 
-The Preview ID is `dk.pigeonarmy.ocheclub.preview` (versionCode **11**). Earlier Preview versions update in place with the preserved Preview signing key. The original alpha app uses a separate ID. Names and saved games stay on the device; there are no ads, accounts, subscriptions or network permission. Signing keys are never included in Git.
+The Preview ID is `dk.pigeonarmy.ocheclub.preview` (versionCode **12**). Earlier Preview versions update in place with the preserved Preview signing key. The original alpha app uses a separate ID. Names and saved games stay on the device; there are no ads, accounts, subscriptions or network permission. Signing keys are never included in Git.
 
 Publication requires the exact immutable APK to pass Android 15 and 16 installation, scoring, averages, languages, themed confirmations, close/relaunch and persistence checks. The workflow publishes the tested bytes without rebuilding or re-signing them.
 

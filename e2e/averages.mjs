@@ -41,6 +41,16 @@ await fresh(page,{players:2});
 const colours=await page.evaluate(()=>['html','.input-panel'].map(selector=>getComputedStyle(document.querySelector(selector)).backgroundColor));
 for(const colour of colours){const channels=colour.match(/[\d.]+/g).map(Number);assert.ok(channels.slice(0,3).every(value=>value<100)&&(channels.length<4||channels[3]>.9),`Expected a dark opaque surface, got ${colour}`);}
 assert.equal(await average(page),'—');assert.equal(await average(page,1),'—');
+// Enter activates focused help; only an unfocused scoring shortcut may submit a total.
+const beforeHelp=JSON.stringify(await saved(page));await digits(page,100);
+await page.locator('.averages-note summary').focus();await page.keyboard.press('Enter');
+assert.equal(await page.locator('.averages-note').evaluate(element=>element.open),true);
+assert.equal(JSON.stringify(await saved(page)),beforeHelp);assert.equal(await page.locator('#score-display').innerText(),'100');
+await page.keyboard.press('Enter');assert.equal(await page.locator('.averages-note').evaluate(element=>element.open),false);
+assert.equal(JSON.stringify(await saved(page)),beforeHelp);await page.locator('[data-score-digit="C"]').click();
+await page.keyboard.type('2');await page.keyboard.press('Enter');assert.equal(await average(page),'2.00');
+await page.locator('#undo').click();assert.equal(JSON.stringify(await saved(page)),beforeHelp);
+
 await page.locator('#calculator').click();await page.locator('#total-tab').click();await digits(page,100,true);await page.locator('#calculator-done').click();
 assert.equal(await average(page),'100.00');assert.equal(await average(page,1),'—');
 assert.deepEqual((await saved(page)).game.players[0].scoringStats,{points:100,darts:3});
