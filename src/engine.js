@@ -21,9 +21,19 @@ export function createGame(mode,names,options={}){
  if(playerNames.some(name=>!name))throw Error(t('Enter a name for every player (at least one non-space character).'));
  if(playerNames.some(name=>name.length>24))throw Error(t('Player names must be 24 characters or fewer.'));
  const start=[301,501,701,1001].includes(Number(options.start))?Number(options.start):501;
- return {mode,options:{start,doubleOut:options.doubleOut!==false,...(mode==='around'?{aroundVariant:options.aroundVariant==='classic'?'classic':'extended'}:{}),...(['cricket','cutthroat'].includes(mode)?{cricketVariant:options.cricketVariant==='classic'?'classic':'extended'}:{})},players:playerNames.map((name,i)=>({name,score:mode==='x01'?start:mode==='halve'?40:0,marks:{},progress:1,lives:3,killer:false,target:i+1})),active:0,round:1,darts:[],winner:null,message:'',turnStart:null};
+ return {mode,options:{start,doubleOut:options.doubleOut!==false,...(mode==='around'?{aroundVariant:options.aroundVariant==='classic'?'classic':'extended'}:{}),...(['cricket','cutthroat'].includes(mode)?{cricketVariant:options.cricketVariant==='classic'?'classic':'extended'}:{})},players:playerNames.map((name,i)=>({name,score:mode==='x01'?start:mode==='halve'?40:0,marks:{},progress:1,lives:3,killer:false,target:i+1,...(['x01','countup'].includes(mode)?{scoringStats:{points:0,darts:0}}:{})})),active:0,round:1,darts:[],winner:null,message:'',turnStart:null};
 }
 export const points=d=>d.anyRing?0:d.n*d.m;
+const hasScoringStats=player=>Number.isInteger(player?.scoringStats?.points)&&player.scoringStats.points>=0&&Number.isInteger(player.scoringStats.darts)&&player.scoringStats.darts>=0;
+/** Three-dart average for tracked games. Older saves have no reliable dart count. */
+export function scoreAverage(game,playerIndex=game.active){
+ const player=game.players?.[playerIndex];
+ return ['x01','countup'].includes(game.mode)&&hasScoringStats(player)&&player.scoringStats.darts>0?3*player.scoringStats.points/player.scoringStats.darts:null;
+}
+function addScoringStats(player,scored,darts){
+ if(hasScoringStats(player)){player.scoringStats.points+=scored;player.scoringStats.darts+=darts;}
+}
+
 export const isExtendedAround=g=>g.options?.aroundVariant==='extended';
 export const isExtendedCricket=g=>['cricket','cutthroat'].includes(g.mode)&&g.options?.cricketVariant==='extended';
 export const cricketTargets=g=>isExtendedCricket(g)?[20,19,18,17,16,15,'double','triple',25]:[20,19,18,17,16,15,25];
@@ -55,8 +65,8 @@ export function throwDart(state,n,m=1,category='number'){
  if(g.mode==='x01'){
   const left=p.score-v;
   if(left<0||(g.options.doubleOut&&left===1)||(left===0&&g.options.doubleOut&&m!==2)){
-   g.players=structuredClone(g.turnStart);g.message=t("Bust! Points from this turn are cancelled.");while(g.darts.length<3)g.darts.push({n:0,m:1,bust:true});
-  }else {p.score=left;if(left===0)finish(g,[g.active]);}
+   g.players=structuredClone(g.turnStart);addScoringStats(g.players[g.active],0,3);g.message=t("Bust! Points from this turn are cancelled.");while(g.darts.length<3)g.darts.push({n:0,m:1,bust:true});
+  }else {p.score=left;addScoringStats(p,v,1);if(left===0)finish(g,[g.active]);}
  }else if(['cricket','cutthroat'].includes(g.mode)){
   if(category!=='number'||n>=15){const row=category==='number'?n:category,marks=category==='number'?m:1,old=p.marks[row]||0,extra=Math.max(0,old+marks-3),scored=extra*(category==='number'?n:v);p.marks[row]=Math.min(3,old+marks);
    if(g.mode==='cricket'){if(g.players.some((q,i)=>i!==g.active&&(q.marks[row]||0)<3))p.score+=scored;}
@@ -76,7 +86,7 @@ export function throwDart(state,n,m=1,category='number'){
  }else if(g.mode==='shanghai'){
   if(n===g.round)p.score+=v;
   if([1,2,3].every(mult=>g.darts.some(x=>x.n===g.round&&x.m===mult)))finish(g,[g.active]);
- }else if(g.mode==='countup')p.score+=v;
+ }else if(g.mode==='countup'){p.score+=v;addScoringStats(p,v,1);}
  else if(g.mode==='baseball'){if(n===g.round)p.score+=m;}
  else if(g.mode==='killer'){
   if(m===2){if(n===p.target)p.killer=true;else if(p.killer){g.players.forEach((q,i)=>{if(i!==g.active&&q.target===n&&q.lives>0){q.lives--;q.killer=false;}});}}
@@ -166,6 +176,7 @@ export function bustTurn(state){
  const g=structuredClone(state);
  if(g.turnStart)g.players=structuredClone(g.turnStart);
  g.turnStart??=structuredClone(g.players);
+ if(g.mode==='x01')addScoringStats(g.players[g.active],0,3);
  while(g.darts.length<3)g.darts.push({n:0,m:1,bust:true});
  g.message=t("Bust! Points from this turn are cancelled.");
  return g;
@@ -176,23 +187,29 @@ function possibleTotals(count){
  for(let i=0;i<count;i++)totals=new Set([...totals].flatMap(total=>values.map(value=>total+value)));
  return totals;
 }
-const TURN_TOTALS=possibleTotals(3),SETUP_TOTALS=possibleTotals(2);
+const TOTALS_BY_DARTS=Array.from({length:4},(_,count)=>possibleTotals(count));
+const TURN_TOTALS=TOTALS_BY_DARTS[3],SETUP_TOTALS=TOTALS_BY_DARTS[2];
 /** Manual entry is a full visit, so the unknown darts cannot be used for target games. */
-export function recordTotal(state,total,finalHit=''){
+export function recordTotal(state,total,finalHit='',dartsUsed=3){
  if(!['x01','countup'].includes(state.mode))throw Error(t("This game needs the exact fields hit. Use the dartboard."));
  if(state.winner!==null||state.darts.length)throw Error(t("Enter a turn total only at the start of a turn."));
  if(!Number.isInteger(total)||total<0||total>180||!TURN_TOTALS.has(total))throw Error(t("Enter a possible score from 0 to 180 using up to three darts."));
+ if(!Number.isInteger(dartsUsed)||dartsUsed<1||dartsUsed>3)throw Error(t('Choose 1, 2 or 3 darts for the checkout.'));
+ const remaining=state.mode==='x01'?state.players[state.active].score-total:null;
+ if(dartsUsed!==3&&remaining!==0)throw Error(t('Only a checkout can use fewer than three darts for a turn total.'));
  const g=structuredClone(state),p=g.players[g.active];g.turnStart=structuredClone(g.players);
- g.darts=[{n:0,m:1,totalEntry:true,total},{n:0,m:1,notThrown:true},{n:0,m:1,notThrown:true}];g.message='';
- if(g.mode==='countup'){p.score+=total;return g;}
- const remaining=p.score-total;
+ g.darts=[{n:0,m:1,totalEntry:true,total,dartsUsed},{n:0,m:1,notThrown:true},{n:0,m:1,notThrown:true}];g.message='';
+ if(g.mode==='countup'){p.score+=total;addScoringStats(p,total,3);return g;}
  if(remaining<0||(g.options.doubleOut&&remaining===1))return bustTurn(g);
- if(remaining===0&&g.options.doubleOut){
-  if(!['double','bullseye','other'].includes(finalHit))throw Error(t("Choose what the final dart hit."));
-  const valid=finalHit==='bullseye'?SETUP_TOTALS.has(total-50):finalHit==='double'?Array.from({length:20},(_,i)=>(i+1)*2).some(n=>SETUP_TOTALS.has(total-n)):false;
-  if(!valid)return bustTurn(g);
+ if(remaining===0){
+  if(g.options.doubleOut){
+   if(!['double','bullseye','other'].includes(finalHit))throw Error(t("Choose what the final dart hit."));
+   const finishes=finalHit==='bullseye'?[50]:finalHit==='double'?Array.from({length:20},(_,i)=>(i+1)*2):[];
+   if(!finishes.some(value=>SETUP_TOTALS.has(total-value)))return bustTurn(g);
+   if(!finishes.some(value=>TOTALS_BY_DARTS[dartsUsed-1].has(total-value)))throw Error(t('That checkout is not possible with the selected dart count.'));
+  }else if(!TOTALS_BY_DARTS[dartsUsed].has(total))throw Error(t('That checkout is not possible with the selected dart count.'));
  }
- p.score=remaining;
+ p.score=remaining;addScoringStats(p,total,dartsUsed);
  if(remaining===0)finish(g,[g.active]);
  return g;
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,throwDart,endTurn,completeVisit,throwAroundRing,dartLabel,checkout,checkoutOptions,recordTotal,bustTurn,points,MODES,target} from '../src/engine.js';
+import {createGame,throwDart,endTurn,completeVisit,throwAroundRing,dartLabel,checkout,checkoutOptions,recordTotal,bustTurn,scoreAverage,points,MODES,target} from '../src/engine.js';
 const g=(mode,opts)=>createGame(mode,['Anna','Bo'],opts);
 const dart=(s,n,m=1)=>throwDart(s,n,m);
 const turn=(s,ds)=>endTurn(ds.reduce((s,[n,m])=>dart(s,n,m),s));
@@ -193,4 +193,104 @@ test('Around ring shortcuts use the current number and preserve final-stage labe
  state=throwAroundRing(state,3);assert.equal(state.players[0].progress,23);assert.equal(dartLabel(state.darts[1]),'Triple');
  assert.equal(state.winner,null);state=throwDart(state,25);assert.deepEqual(state.winner,[0]);
  assert.throws(()=>throwAroundRing(g('x01'),2));assert.throws(()=>throwAroundRing(g('around'),1));
+});
+
+
+test('three-dart averages start empty only in X01 and Count Up',()=>{
+ for(const {id} of MODES){
+  const state=g(id);assert.equal(scoreAverage(state),null);
+  for(const player of state.players){
+   if(['x01','countup'].includes(id))assert.deepEqual(player.scoringStats,{points:0,darts:0});
+   else assert.equal('scoringStats' in player,false);
+  }
+ }
+});
+test('numeric averages accumulate per player and survive immutable visit snapshots',()=>{
+ const original=g('x01');
+ let state=completeVisit(recordTotal(original,100));
+ const firstVisit=structuredClone(state);
+ assert.equal(scoreAverage(state,0),100);assert.equal(scoreAverage(state,1),null);
+ state=completeVisit(recordTotal(state,50));
+ assert.equal(scoreAverage(state,0),100);assert.equal(scoreAverage(state,1),50);
+ state=completeVisit(recordTotal(state,50));
+ assert.equal(scoreAverage(state,0),75);assert.equal(scoreAverage(state,1),50);
+ assert.deepEqual(state.players[0].scoringStats,{points:150,darts:6});
+ assert.deepEqual(original.players[0].scoringStats,{points:0,darts:0});
+ assert.equal(scoreAverage(firstVisit,0),100);assert.equal(scoreAverage(firstVisit,1),null);
+ assert.equal(scoreAverage(JSON.parse(JSON.stringify(state)),0),75,'Saved averages must not depend on retained undo history');
+});
+test('exact dart averages include misses and partial Done counts the full visit',()=>{
+ const before=g('x01'),live=throwDart(before,20,3);
+ assert.equal(scoreAverage(live),180);assert.deepEqual(live.players[0].scoringStats,{points:60,darts:1});
+ const confirmed=completeVisit(live);
+ assert.equal(scoreAverage(confirmed,0),60);assert.deepEqual(confirmed.players[0].scoringStats,{points:60,darts:3});
+ assert.equal(scoreAverage(live),180,'Confirming a partial visit must not mutate its undo snapshot');
+ let exact=throwDart(g('x01'),20,3);exact=throwDart(exact,0);exact=throwDart(exact,20);
+ assert.equal(scoreAverage(exact),80);assert.deepEqual(exact.players[0].scoringStats,{points:80,darts:3});
+});
+test('a natural third-dart Bust cancels all turn points and counts three darts once',()=>{
+ let state=createGame('x01',['A'],{start:301});
+ for(const total of [180,80])state=completeVisit(recordTotal(state,total));
+ const before=structuredClone(state);assert.equal(state.players[0].score,41);assert.equal(scoreAverage(state),130);
+ state=throwDart(state,1);state=throwDart(state,20);state=throwDart(state,20,3);
+ assert.match(state.message,/Bust/);assert.equal(state.players[0].score,41);
+ assert.deepEqual(state.players[0].scoringStats,{points:260,darts:9});assert.equal(scoreAverage(state),260/3);
+ const repeated=bustTurn(bustTurn(state));assert.deepEqual(repeated.players[0].scoringStats,state.players[0].scoringStats);
+ const confirmed=completeVisit(repeated);assert.deepEqual(confirmed.players[0].scoringStats,state.players[0].scoringStats);
+ assert.equal(scoreAverage(before),130);assert.deepEqual(before.players[0].scoringStats,{points:260,darts:6});
+});
+test('explicit and numeric Busts score zero over one complete visit',()=>{
+ const fresh=g('x01'),explicit=bustTurn(throwDart(fresh,20,3));
+ assert.equal(explicit.players[0].score,501);assert.deepEqual(explicit.players[0].scoringStats,{points:0,darts:3});assert.equal(scoreAverage(explicit),0);
+ assert.deepEqual(bustTurn(bustTurn(fresh)).players[0].scoringStats,{points:0,darts:3});
+ let low=createGame('x01',['A'],{start:301});for(const total of [180,80])low=completeVisit(recordTotal(low,total));
+ const busted=recordTotal(low,60);
+ assert.equal(busted.players[0].score,41);assert.deepEqual(busted.players[0].scoringStats,{points:260,darts:9});
+ assert.deepEqual(bustTurn(busted).players[0].scoringStats,busted.players[0].scoringStats);
+ const replaced=bustTurn(recordTotal(g('x01'),100));assert.deepEqual(replaced.players[0].scoringStats,{points:0,darts:3});
+});
+test('an exact two-dart checkout uses two darts in the final game average',()=>{
+ let state=createGame('x01',['A'],{start:301});
+ for(const total of [180,80])state=completeVisit(recordTotal(state,total));
+ state=throwDart(state,1);state=throwDart(state,20,2);
+ assert.deepEqual(state.winner,[0]);assert.deepEqual(state.players[0].scoringStats,{points:301,darts:8});assert.equal(scoreAverage(state),301*3/8);
+ assert.equal(completeVisit(state),state);assert.equal(scoreAverage(state),301*3/8);
+});
+test('manual checkout dart counts produce weighted averages and reject impossible counts',()=>{
+ let state=createGame('x01',['A'],{start:301});for(const total of [180,81])state=completeVisit(recordTotal(state,total));
+ const before=structuredClone(state),single=recordTotal(state,40,'double',1),two=recordTotal(state,40,'double',2),three=recordTotal(state,40,'double');
+ assert.equal(scoreAverage(single),301*3/7);assert.equal(single.darts[0].dartsUsed,1);
+ assert.equal(scoreAverage(two),301*3/8);assert.equal(scoreAverage(three),301*3/9);assert.deepEqual(state,before);
+ for(const bad of [0,4,1.5,'1',null])assert.throws(()=>recordTotal(state,40,'double',bad),/Choose 1, 2 or 3 darts/);
+ assert.throws(()=>recordTotal(state,20,'',1),/Only a checkout/);
+ let sixty=createGame('x01',['A'],{start:301});for(const total of [180,61])sixty=completeVisit(recordTotal(sixty,total));
+ assert.throws(()=>recordTotal(sixty,60,'double',1),/not possible.*dart count/);
+ assert.deepEqual(recordTotal(sixty,60,'double',2).winner,[0]);
+ let bull=createGame('x01',['A'],{start:301});for(const total of [180,71])bull=completeVisit(recordTotal(bull,total));
+ assert.deepEqual(recordTotal(bull,50,'bullseye',1).players[0].scoringStats,{points:301,darts:7});
+ const invalidFinish=recordTotal(state,40,'bullseye',1);assert.equal(invalidFinish.winner,null);assert.deepEqual(invalidFinish.players[0].scoringStats,{points:261,darts:9});
+});
+test('straight-out checkout counts still require physically possible fields',()=>{
+ let state=createGame('x01',['A'],{start:301,doubleOut:false});for(const total of [180,61])state=completeVisit(recordTotal(state,total));
+ assert.deepEqual(recordTotal(state,60,'',1).players[0].scoringStats,{points:301,darts:7});
+ let high=createGame('x01',['A'],{start:301,doubleOut:false});high=completeVisit(recordTotal(high,180));
+ assert.throws(()=>recordTotal(high,121,'',2),/not possible.*dart count/);assert.deepEqual(recordTotal(high,121).winner,[0]);
+});
+test('Count Up averages include total visits, exact hits and zero-point darts',()=>{
+ let state=createGame('countup',['A']);state=endTurn(recordTotal(state,100));
+ state=throwDart(state,20,3);state=throwDart(state,0);state=throwDart(state,20);
+ assert.equal(state.players[0].score,180);assert.deepEqual(state.players[0].scoringStats,{points:180,darts:6});assert.equal(scoreAverage(state),90);
+ assert.equal(scoreAverage(endTurn(state)),90);assert.throws(()=>recordTotal(createGame('countup',['A']),40,'',2),/Only a checkout/);
+});
+test('legacy games stay untracked until a new game and never fabricate old dart counts',()=>{
+ for(const mode of ['x01','countup']){
+  let legacy=createGame(mode,['A']);delete legacy.players[0].scoringStats;
+  assert.equal(scoreAverage(legacy),null);
+  legacy=endTurn(recordTotal(legacy,100));assert.equal(scoreAverage(legacy),null);
+  legacy=throwDart(legacy,20);assert.equal(scoreAverage(legacy),null);assert.equal('scoringStats' in legacy.players[0],false);
+  if(mode==='x01')assert.equal(scoreAverage(bustTurn(legacy)),null);
+  const rematch=createGame(mode,legacy.players.map(player=>player.name),legacy.options);assert.deepEqual(rematch.players[0].scoringStats,{points:0,darts:0});
+  assert.equal(scoreAverage(recordTotal(rematch,100)),100);
+ }
+ const invalid=g('x01');invalid.players[0].scoringStats={points:NaN,darts:3};assert.equal(scoreAverage(invalid),null);
 });

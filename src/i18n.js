@@ -1,5 +1,15 @@
 // English is the fallback. Danish follows the device’s preferred language.
 export const DANISH=Object.freeze({
+  "That checkout is not possible with the selected dart count.": "Lukningen er ikke mulig med det valgte antal pile.",
+  "Only a checkout can use fewer than three darts for a turn total.": "Kun en lukning kan bruge færre end tre pile ved indtastning af turens samlede point.",
+  "Choose 1, 2 or 3 darts for the checkout.": "Vælg 1, 2 eller 3 pile til lukningen.",
+  "Choose the darts used for this checkout so your average stays accurate.": "Vælg antallet af pile brugt til lukningen, så dit gennemsnit forbliver korrekt.",
+  "Darts used to finish": "Pile brugt til lukningen",
+  "Points scored ÷ darts counted × 3. Busts count as three darts with zero points. Turn totals use three darts; for a checkout, choose how many you used.": "Scorede point ÷ registrerede pile × 3. Bust tæller som tre pile med nul point. Turens samlede point tæller som tre pile; ved en lukning vælger du, hvor mange du brugte.",
+  "This saved game has no dart counts, so its average cannot be calculated. A rematch starts tracking.": "Dette gemte spil har ikke registreret antal pile, så gennemsnittet kan ikke beregnes. En revanche starter målingen.",
+  "Start a new game to track averages": "Start et nyt spil for at måle gennemsnit",
+  "About averages": "Om gennemsnit",
+  "3-dart avg": "3-pils gns.",
   "Keep data": "Behold data",
   "Delete data": "Slet data",
   "This removes the saved game, player names and undo history from this device.": "Dette sletter det gemte spil, spillernavne og fortryd-historik fra denne enhed.",
